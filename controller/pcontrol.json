@@ -1,0 +1,39 @@
+<?php
+
+require("sub/head.php");
+
+if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+    $tt = $_GET['tt'];
+    $tn = $_GET['tn'];
+    $ct = $_GET['ct'];
+    $cn = $_GET['cn'];
+
+    $resp['pcontrols'] = array();
+    $resp['pcontrols'][] = getPControl($tt, $tn, $ct, $cn);
+
+    $resp['status'] = 1;
+    jsonResponse($resp);
+}   
+elseif ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $tt = $_POST['tt'];
+    $tn = $_POST['tn'];
+    $ct = $_POST['ct'];
+    $cn = $_POST['cn'];
+    $value = $_POST['value'];
+    
+    if ($tt == "switcher-dxp" ||
+            $tt == "audio-onkyo") {
+        queueCommand($tt, $tn, $ct, $cn, $value);
+        alertControlDaemon($tt, $tn);
+    }
+    else {
+        $resp['pcontrols'] = array();
+        $resp['pcontrols'][] = setPControl($tt, $tn, $ct, $cn, $value);
+    }
+
+    $resp['status'] = 1;
+    jsonResponse($resp);
+}
+
+
+?>  

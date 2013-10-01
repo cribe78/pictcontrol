@@ -1,0 +1,10 @@
+<?php
+
+$js_includes = array("controlpanel.js");
+$css_includes = array("css/controlpanel.css");
+require("sub/head.php");
+
+?>
+<body> 
+</body>
+</html>

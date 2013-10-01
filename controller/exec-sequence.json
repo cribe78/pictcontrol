@@ -1,0 +1,49 @@
+<?php
+require("sub/head.php");
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $seq = 0;
+    if (isset($_POST['seq'])) 
+        $seq = $_POST['seq'];
+
+    if (! $seq) {
+        pclog("seq value not set");
+        jsonResponse();
+    }
+
+    $select_seq = $mysqli->prepare(
+        "select idx, target_type, target_num, command_type, command_name, value
+            from commands
+            inner join sequence_commands on sequence_commands.command_id = commands.command_id
+            inner join sequences on sequences.sequence_id = sequence_commands.sequence_id
+            where name = ?
+            order by idx");
+
+    if (! $select_seq) {
+        pclog("prepare select_seq error: {$mysqli->error}");
+        jsonResponse();
+    }
+
+    $select_seq->bind_param('s', $seq);
+
+    if (! $select_seq->execute()) {
+        pclog("execute select_seq error: {$mysqli->error}");
+        jsonResponse();
+    }
+
+    $select_seq->bind_result($idx, $tt, $tn, $ct, $cn, $val);
+    $select_seq->store_result();
+        
+    pclog("exec-sequence: executing sequence $seq");
+
+    $resp['pcontrols'] = array();
+
+    while ($select_seq->fetch()) {
+        $ra = setPControl($tt, $tn, $ct, $cn, $val);
+        if ($ra != null) 
+            $resp['pcontrols'][] = $ra;
+    }
+
+    $resp['status'] = 1;
+    jsonResponse();
+}

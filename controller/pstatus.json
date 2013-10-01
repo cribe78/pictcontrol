@@ -1,0 +1,24 @@
+<?php
+
+require("sub/head.php");
+
+if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+    $screen = $_GET['screen'];
+    $val = "?";
+    if ($screen === "all") {
+        error_log("pstatus all: parallelize status requests for increased performance");
+        $resp['error'] = "pstatus all not supported";
+        jsonResponse();
+    }
+
+    $resp['projectors'][$screen]['POWR'] = f32Command($screen, 'POWR', '?');
+    $resp['projectors'][$screen]['SHUT'] = f32Command($screen, 'SHUT', '?');
+    $resp['projectors'][$screen]['LST1'] = f32Command($screen, 'LST1', '?');
+    $resp['projectors'][$screen]['LST2'] = f32Command($screen, 'LST2', '?');
+
+    $resp['status'] = 1;
+    jsonResponse();
+} 
+
+$resp['error'] = "request method not supported";
+jsonResponse();

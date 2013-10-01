@@ -1,0 +1,59 @@
+<?php
+require("sub/head.php");
+
+if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+    $idx = 0;
+    if (isset($_GET['idx'])) 
+        $idx = $_GET['idx'];
+
+    $select_logs = $mysqli->prepare(
+        "select log_id, log_str from log
+            where log_id > ? 
+            and log_id > 
+            (select max(log_id) - 100 from log)
+            order by log_id");
+
+    if (! $select_logs) {
+        pclog("prepare select_logs error: {$mysqli->error}");
+        jsonResponse($resp);
+    }
+
+    $select_logs->bind_param('i', $idx);
+
+    $resp['log'] = array();
+    $start_time = time();
+    $max_elapsed = 120;
+        
+    while (time() - $start_time < $max_elapsed) {
+        if (! $select_logs->execute()) {
+            pclog("prepare select_logs error: {$mysql->error}");
+            jsonResponse($resp);
+        }
+
+        $select_logs->bind_result($log_id, $log_str);
+        $select_logs->store_result();
+        while ($select_logs->fetch()) {
+            $resp['log'][] = array( "log_id" => $log_id,
+                                    "log_str" => $log_str);
+        }
+        
+        if (isset($resp['log'][0])) {
+            $resp['status'] = 1;
+            jsonResponse($resp);
+        }
+        else {
+            usleep(500000);
+        }
+    }
+
+    $resp['status'] = 1;
+    jsonResponse($resp);
+}
+
+
+
+
+
+    
+
+

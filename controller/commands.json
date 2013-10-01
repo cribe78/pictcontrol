@@ -1,0 +1,85 @@
+<?php
+
+require("sub/head.php");
+
+if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+    // Poll database for recent commands
+    $cmd_idx = $_GET['cmd_idx'];
+
+
+    $select_commands = $mysqli->prepare(
+        "select cq_id, target_type, target_num, command_name, command_type, 
+            value, cmd_idx
+            from command_queue 
+            where cmd_idx > ?
+            and status = 'EXECUTED'
+            order by cmd_idx");
+
+    if (! $select_commands) {
+        pclog("prepare select_commands error: {$mysqli->error}");
+        jsonResponse();
+    }
+    
+    $select_commands->bind_param('i', $cmd_idx);
+
+    $resp['pcontrols'] = array();
+    $start_time = time();
+    $max_elapsed = 120;
+        
+    while (time() - $start_time < $max_elapsed) {
+        if (! $select_commands->execute()) {
+            pclog("execute select_commands error: {$mysql->error}");
+            jsonResponse();
+        }
+
+        $select_commands->bind_result($cq_id, $tt, $tn, $cn, $ct, $value, $cmd_idx_r);
+        $select_commands->store_result();
+        
+        $alerted_devices = array();
+
+
+        while ($select_commands->fetch()) {
+            $resp['pcontrols'][] = array( "cq_id" => $cq_id,
+                "tt" => $tt,
+                "tn" => $tn,
+                "cn" => $cn,
+                "ct" => $ct,
+                "value" => $value,
+                "cmd_idx" => $cmd_idx_r);
+
+            if (! isset($alerted_devices["$tt$tn"])) {
+                alertControlDaemon($tt, $tn, "ALV?");
+                $alerted_devices["$tt$tn"] = 1;
+            }
+        }
+        
+        if (isset($resp['pcontrols'][0])) {
+            $resp['status'] = 1;
+            jsonResponse();
+        }
+        else {
+            $elapsed = time() - $start_time;
+            //pclog("sleeping before polling DB ($elapsed elapsed)");
+            usleep(1000000);
+        }
+    }
+
+    $resp['status'] = 1;
+    jsonResponse($resp);
+}   
+elseif ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $tt = $_POST['tt'];
+    $tn = $_POST['tn'];
+    $ct = $_POST['ct'];
+    $cn = $_POST['cn'];
+    $value = $_POST['value'];
+    
+    queueCommand($tt, $tn, $ct, $cn, $value);
+        
+
+    $resp['status'] = 1;
+    jsonResponse($resp);
+}
+
+
+?>  

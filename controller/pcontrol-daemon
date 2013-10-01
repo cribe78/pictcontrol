@@ -1,0 +1,724 @@
+#!/usr/bin/perl
+
+# pcontrol-daemon  
+# Control program for Extron DXP HDMI switcher
+# Reads commands from a database and executes them.  Keeps database updated with 
+# status of switcher
+
+use DBI;
+use English;
+use Getopt::Long;
+use IO::Socket::INET;
+use POSIX;
+use Scalar::Util qw( looks_like_number );
+use Sys::Syslog;
+use Time::HiRes qw( usleep time );
+use feature 'state';
+use warnings;
+use strict;
+
+$|++;
+
+# Daemonize
+# Get ready to daemonize by redirecting our output to syslog, 
+# requesting that logger prefix the lines with our program name:
+my $ProgramName = "pcontrol-daemon";
+open(STDOUT, "|-", "logger -p local2.info -t $ProgramName") 
+    or die("Couldn't open logger output stream: $!\n");  
+open(STDERR, ">&STDOUT") or die("Couldn't redirect STDERR to STDOUT: $!\n");
+
+
+chdir('/'); # Avoid the possibility of our working directory resulting in keeping an otherwise unused filesystem in use
+
+# Double-fork to avoid leaving a zombie process behind:
+my $pid;
+defined($pid = fork()) or die "can't fork: $!";
+
+if ($pid) {
+    exit;
+}
+
+defined($pid = fork()) or die "can't fork: $!";
+if ($pid) {
+    exit;
+};
+
+print "$ProgramName $$ successfully daemonized\n";
+openlog("pcontrol-daemon","pid","local2");
+
+# Print a log message before exiting on SIGTERM
+$SIG{TERM} = sub {
+    syslog("err", "received SIGTERM.  exiting");
+    exit();
+};
+
+
+my $dbh = DBI->connect("dbi:mysql:pictcontrol:127.0.0.1:3306","pict","DWCONTROL");
+
+my $device_ip = "10.5.162.202";
+my $device_port = "23";
+my $device_pass = "DWCONTROL";
+my $target_type = "switcher-dxp";
+my $target_num = 1;
+my $debug = 1;
+my $target_poll_freq = 20; # how often to poll the switcher status, in s
+my $listen_port = 0;
+
+GetOptions("address=s" => \$device_ip,
+            "port=i" => \$device_port,
+            "password=s" => \$device_pass,
+            "tt=s" => \$target_type,
+            "tn=i" => \$target_num,
+            "debug=i" => \$debug,
+            "listen_port=i" => \$listen_port);
+
+
+# Use this to build the listen_port number
+# from the target type
+my %default_ports = ( proj => 28800,
+                      scaler => 28810,
+                      "switcher-dxp" => 28820,
+                      "audio-onkyo" => 28830);
+
+if (! $listen_port) {
+    $listen_port = $default_ports{$target_type} + $target_num;
+}
+
+my $proto = "";
+
+if ($target_type eq "switcher-dxp") {
+    $proto = "dxp";
+}
+elsif ($target_type eq "audio-onkyo") {
+    $proto = "iscp";
+}
+elsif ($target_type eq "proj") {
+    $proto = "f32";
+}
+
+if (! $proto) {
+    syslog("err", "no protocol defined for target_type $target_type, exiting");
+    exit();
+}  
+
+
+if ($DBI::errstr) {
+    syslog("err", "error connecting to rtttdb: $DBI::errstr");
+    exit();
+}
+else {
+    syslog("info", "successfully connected to pictcontrol db");
+}
+
+
+# Connect to the switcher
+my $sock = device_connect();
+if (! $sock) {
+    dwlog("could not connect to device, exiting");
+    exit();
+}
+
+# Create a UDP server to listen for notifications
+my $poll_sock = server_start();
+
+run();
+
+sub dbConnect {
+    $dbh = 0;
+    $dbh = DBI->connect("dbi:mysql:pictcontrol:127.0.0.1:3306","pict","DWCONTROL");
+}
+
+sub device_connect {
+    my $sock = IO::Socket::INET->new(
+                PeerAddr => $device_ip,
+                PeerPort => $device_port,
+                Proto => 'tcp',
+                Blocking => 0,
+                Timeout => 5);
+    if (! $sock) { 
+        syslog("err", "could not open socket to device");
+    }
+
+    dwlog("connected to $device_ip:$device_port, proto $proto");
+    usleep(2000000);
+
+    if ($proto eq "iscp" ||
+        $proto eq "f32") {
+        return $sock;
+    }
+
+    # The extron prints a connection message before the password prompt
+    my $msg = telnet_read($sock);
+    if (! $msg) {
+    #    dwlog("no response from switcher");
+    #    $sock->close();
+    #    return 0;
+    }
+    dwdebug("line read: $msg");
+
+    $msg = telnet_read($sock);
+    if (! $msg) {
+        dwlog("no response from switcher");
+        $sock->close();
+        return 0;
+    }
+
+    if ($msg !~ /Extron Electronics/) {
+        dwlog("unexpected welcome message: $msg");
+        $sock->close();
+        return 0;
+    }
+    dwdebug("line read: $msg");
+    
+    # One of these lines is the date, the other a blank line
+    $msg = telnet_read($sock);
+    dwdebug("line read: $msg");
+
+    $msg = telnet_read($sock);
+    dwdebug("line read: $msg");
+
+    # The password prompt should follow
+    $msg = telnet_read($sock);
+    if ($msg ne "Password:") {
+        dwlog("expected password prompt: $msg");
+        $sock->close();
+        return 0;
+    }
+    else {
+        dwdebug("password prompt read");
+    }
+
+
+    $sock->print("$device_pass\r\n");
+    $msg = telnet_read($sock);
+    dwdebug("line read: $msg");
+
+
+    $msg = telnet_read($sock);
+    if ($msg =~ /Login Administrator/) {
+        dwlog("successfully logged into switcher");
+        return $sock;
+    }
+    else {
+        dwlog("switcher login failed! $msg");
+        $sock->close();
+        return 0;
+    }
+}
+
+
+sub dwdebug {
+    my ($msg) = (@_);
+    if ($debug) {
+        dwlog($msg);
+    }
+}
+
+
+# Send log messages to the database and syslog
+
+sub dwlog {
+    my ($msg) = (@_);
+    chomp $msg;
+    syslog("info", $msg);
+}
+
+
+sub execute_command {
+    if ($proto eq "dxp") {
+        return execute_command_dxp(@_);
+    }
+    elsif ($proto eq "iscp") {
+        return execute_command_iscp(@_);
+    }
+    elsif ($proto eq "f32") {
+        return execute_command_f32(@_);
+    }
+    else {
+        dwlog("command protocol not implemented: $proto");
+        return 0;
+    }
+}
+
+sub execute_command_dxp {
+    my ($cmd_ref) = (@_);
+    my %command = %$cmd_ref;
+    
+    # Build Command
+    if ($command{command_name} =~ /^Out(\d)(Vid|Aud)/) {
+        my $output = $1;
+        my $av = $2;
+        
+        my $avchar = "%";
+        if ($av eq "Aud") {
+            $avchar = '$';
+        }
+
+        my $valpart = "$command{value}*";
+        if ($command{command_type} eq "query") {
+            $valpart = "";
+        }
+
+        my $command_str = $valpart . $output . $avchar . "\r\n";
+        my $expected_resp = "Out$output In$command{value} $av"; 
+        
+        $sock->print($command_str);
+        dwdebug("command_sent: $command_str");
+
+        while (my $resp = telnet_read($sock)) {
+            dwdebug("resp read: $resp");
+            if ($command{command_type} eq "query" &&
+                    $resp =~ /^\d$/) {
+                update_command_value($command{cq_id}, $resp);
+                return 1;
+            }
+
+            if ($resp eq $expected_resp) {
+                return 1;
+            }
+
+            if ($resp =~ /^E\d\d\$/) {
+                dwlog("execute_command error code returned: $resp");
+                return 0;
+            }
+
+            else { 
+                dwdebug("unexpected response: $expected_resp:$resp");
+                handle_unexpected_response($resp);
+            }
+        }
+
+        return 0;
+    }
+
+    dwlog("execute_command: $command{command_name} not supported");
+    return 0;
+}
+
+
+sub execute_command_f32 {
+    my ($cmd_ref) = (@_);
+    my %command = %$cmd_ref;
+    
+    my $cmd_name = $command{command_name};
+    my $val = $command{value};
+    
+    if ($command{command_type} eq "query") {
+        $val = "?";
+    }
+
+    my $cmd_str = ":$cmd_name$val";
+
+    $sock->print("$cmd_str\r");
+    dwdebug("command sent: $cmd_str");
+    usleep(200000);
+    my $resp = telnet_read($sock);
+    dwdebug("response read: $resp");
+    if ($resp =~ /(%001.*)/) {
+        $resp = $1;
+    }
+
+    if (length($resp) < 16) {
+        dwlog("unexpected f32 reponse: $resp");
+        return 0;
+    }
+
+    # Sometime we will get multiple responses, including ones from 
+    # previous commands
+    my $rcmd = substr($resp, 5, 4);
+    while ($rcmd ne $cmd_name) {
+        dwlog("unexpected f32 response cmd: $rcmd");
+        $sock->print("\r\n");
+        usleep(100000);
+        $resp = telnet_read($sock);
+        
+        if (length($resp) < 16) {
+            if (length($resp)) {
+                dwlog("short f32 response: $resp");
+            }
+            else {
+                dwlog("no f32 response");
+            }
+
+            return 0;
+        }
+
+        $rcmd = substr($resp, 5, 4);
+    }
+        
+
+    my $rval = substr($resp, 10, 6); 
+
+    if ($rval eq "!00001") {
+        dwlog("f32 command resp: access denied");
+        return 0;
+    }
+    elsif ($rval eq "!00002") {
+        dwlog("f32 command resp: cmd not available");
+        return 0;
+    }
+    elsif ($rval eq "!00003") {
+        dwlog("f32 command resp: cmd not implemented");
+        return 0;
+    }
+    elsif ($rval eq "!00004") {
+        dwlog("f32 command resp: value out of range");
+        return 0;
+    }
+
+    if ($rval eq "e00001") {
+        if (length($resp) < 18) {
+            dwlog("no extended info available");
+            return 0;
+        }
+
+        $val = substr($resp, 17);
+    }
+    else {
+        $val = sprintf("%d", $rval);
+    }
+
+
+    if ($command{command_type} eq "query") {        
+        update_command_value($command{cq_id}, $val);
+        return 1;
+    }
+    
+    if ($val eq $command{value}) {    
+        dwdebug("resp matches expected value");
+        return 1;   
+    }
+
+    return 0;
+}
+
+
+sub execute_command_iscp {
+    my ($cmd_ref) = (@_);
+    my %command = %$cmd_ref;
+    
+    my $cmd_name = $command{command_name};
+    my $val = $command{value};
+    
+    if ($command{command_type} eq "query") {
+        $val = "QSTN";
+    }
+    elsif ( looks_like_number($val)) {
+        $val = sprintf("%02X", $val);
+    }
+
+    my $cmd_str = "!1$cmd_name$val";
+
+    $sock->print("$cmd_str\n");
+    dwdebug("command sent: $cmd_str");
+    usleep(200000);
+    my $resp = telnet_read($sock);
+    dwdebug("response read: $resp");
+
+    if ($command{command_type} eq "query") {
+        if (length($resp) <= 5) {
+            dwlog("unexpected query reponse: $resp");
+            return 0;
+        }
+
+        $val = hex(substr($resp, 5));
+        update_command_value($command{cq_id}, $val);
+        return 1;
+    }
+
+    if ($resp eq $cmd_str) {    
+        dwdebug("resp matches expected value");
+        return 1;   
+    }
+
+    return 0;
+}
+
+
+sub get_commands {
+    state $max_id = 0; 
+    state $select_commands = $dbh->prepare(
+        "select cq_id, command_name, value, command_type, ts, 
+            cmd_idx
+            from command_queue 
+            where cmd_idx > ?
+                and target_type = ?
+                and target_num = ?
+                and status = 'QUEUED'");
+
+    if (! $select_commands->execute( $max_id, $target_type, $target_num)) {
+        dwlog("select commands error: $DBI::errstr");
+    }
+
+    my $res = $select_commands->fetchall_hashref("cq_id");
+
+    my $cq_id;
+    foreach $cq_id (keys(%$res)) {
+        $max_id = $cq_id > $max_id ? $cq_id : $max_id;
+    }
+
+    return $res;
+}
+
+
+sub get_poll_commands {
+    state $select_commands = $dbh->prepare(
+        "select cq_id, command_name, value, command_type 
+            from command_queue
+            where target_type = ?
+                and target_num = ?
+                and poll = 1");
+
+    if (! $select_commands) {
+        dwlog("prepare select_commands error: $DBI::errstr");
+        exit(-1);
+    }
+
+    if (! $select_commands->execute($target_type, $target_num)) {
+        dwlog("select poll commands error: $DBI::errstr");
+        return 0;
+    }
+
+    my $res = $select_commands->fetchall_hashref("cq_id");
+    
+    return $res;
+}
+    
+
+# Handle a reponse other than an error or the expected reponse
+
+sub handle_unexpected_response {
+    my ($resp) = (@_);
+
+    if ($resp =~ /Out(\d+) In(\d+) (Aud|Vid|All)/) {
+        my $out = $1;
+        my $in = $2;
+        my $av = $3;
+
+
+        if ($av eq 'All') {
+            insert_new_executed("Out$1Aud", $2);
+            insert_new_executed("Out$1Vid", $2);
+        }
+        else {
+            insert_new_executed("Out$1$av", $2);
+        }
+
+        dwlog("unexpected command processed: $resp");
+    }
+    else {
+        dwlog("unhandled unexpected response: $resp");
+    }
+        
+}
+
+
+sub insert_new_executed {
+    my ($command_name, $value) = (@_);
+
+    my $insert_command = $dbh->prepare(
+        "insert into command_queue (target_type, taget_num,
+            command_name, value, status)
+            values (?,?,?,?,?)");
+ 
+    if (! $insert_command) {
+        dwlog("error preparing insert_command: $DBI::errstr");
+    }
+
+    if (! $insert_command->execute($target_type, $target_num, $command_name,
+                                    $value, 'EXECUTED')) {
+        dwlog("error inserting command: $DBI::errstr");
+    }
+}
+
+
+# Main execution loop
+sub run {
+    my $poll_target_last = 0;
+    my $poll_server = 1;
+
+
+    MAIN_LOOP: while (1) {
+        my $cmd_ref;
+        my %commands;
+        my $id;
+
+        if ( $poll_server || server_poll()) {
+            dwdebug("fetch commands loop");
+            $cmd_ref = get_commands();
+            %commands = %$cmd_ref;
+
+            foreach $id (sort(keys(%commands))) {
+                my $res = execute_command($commands{$id});
+                my $status = $res ? "EXECUTED" : "FAILED";
+                update_command_status($id, $status);
+            }
+
+            if (server_poll()) {
+                $poll_server = 1;
+                next MAIN_LOOP;
+            }
+            $poll_server = 0;
+        }
+
+        while (my $resp = telnet_read($sock)) {
+            handle_unexpected_response($resp);
+        }
+
+        if (time() - $poll_target_last > $target_poll_freq) {
+            $cmd_ref = get_poll_commands();
+            %commands = %$cmd_ref;
+
+            foreach $id (keys(%commands)) {
+                my $res = execute_command($commands{$id});
+                my $status = $res ? "EXECUTED" : "FAILED";
+                update_command_status($id, $status);
+
+                # Break out of this if there are more client
+                # commands to process
+                if (server_poll()) {
+                    dwdebug("breaking poll command loop");
+                    $poll_server = 1;
+                    next MAIN_LOOP;
+                }
+            }
+
+            $poll_target_last = time();
+        }
+    }
+}
+
+
+
+sub server_poll {
+    my $ret_val = 0;
+    my $data = "";
+
+    # We will not do anything with the data received on 
+    # this port, it is only used to indicate that we 
+    # need to poll the database
+
+    while (my $addr = $poll_sock->recv($data, 4)) {
+        $ret_val = 1;
+        my $ack = "ACK";
+        dwdebug("$data received");
+
+        if ($data eq "ALV?") {
+            $ret_val = 0;
+        }
+
+        $poll_sock->send($ack);
+        dwdebug("ack sent");
+    }
+
+    return $ret_val;
+}
+    
+
+
+
+# Create a UDP server for listening for event notifications.
+# We will use the receipt of a packet as a trigger to poll
+# the database for changes
+
+sub server_start {
+    # Since we need to agree on a port number with the PHP application,
+    # we should probably ask that applicaiton which port to use
+
+    my $server_sock = IO::Socket::INET->new(
+                            LocalPort => $listen_port,
+                            Proto => "udp",
+                            Blocking => 0);
+
+    if (! $server_sock) {
+        dwlog("failed to start UDP server on port $listen_port: $!");
+        exit(-1);
+    }
+    
+    my $insert_daemon = $dbh->prepare(
+        "insert into command_daemons (target_type, target_num, port, pid)
+            values (?, ?, ?, ?)
+            on duplicate key update port = VALUES(port), pid = VALUES(pid)");
+
+    if (! $insert_daemon) {
+        dwlog("error preparing insert_daemon: $DBI::errstr");
+    }
+
+    $insert_daemon->execute($target_type, $target_num, $listen_port, $PID);
+    dwdebug("daemon registered with DB");
+        
+    return $server_sock;
+}
+
+
+
+
+# Read a line from a non-blocking telnet connection.
+
+sub telnet_read {
+    my ($sock) = (@_);
+        
+    my $buf; 
+    my $res = ""; 
+    my $wait_us = 10000;
+    my $char_missed = 0; 
+
+    while (1) {
+        if ($sock->read($buf, 1)) {
+            if ($buf eq "\r") {
+                $sock->read($buf, 1);
+                return $res;
+            }
+            elsif ($buf eq "\x1A") {
+                dwdebug("0x1A read");
+                return $res;
+            }
+            $res .= $buf;
+            $char_missed = 0;
+        }
+        else {
+            if ($char_missed) {
+                chomp $res;
+                return $res;
+            }
+            else {
+                $char_missed = 1;
+                usleep($wait_us);
+            }
+        }
+    }
+}
+
+sub update_command_value {
+    my ($cq_id, $value) = (@_);
+
+    state $update_command = $dbh->prepare(
+        "update command_queue set value = ? where cq_id = ?");
+
+    if (! $update_command->execute($value, $cq_id)) {
+        dwlog("update command value failed: $DBI::errstr");
+        return 0;
+    }
+
+    return 1;
+}
+
+
+sub update_command_status {
+    my ($cq_id, $status) = (@_);
+
+    state $update_command = $dbh->prepare(
+        "update command_queue set status = ? where cq_id = ?");
+
+    if (! $update_command->execute($status, $cq_id)) {
+        dwlog("update command status failed: $DBI::errstr");
+        return 0;
+    }
+
+    return 1;
+}
+    
+
+
+
+

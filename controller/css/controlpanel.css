@@ -1,0 +1,52 @@
+.keystonediv {
+}
+
+.keystonedivleft {
+    display: inline-block;
+    width: 380px;
+}
+
+.keystonedivright {
+    display: inline-block;
+    width: 380px;
+}
+
+.keystoneslider {
+    width: 360px;
+    margin: 12px;
+}
+
+.matrixcontrol {
+    display: inline-block;
+}
+
+.picttb {
+    padding: 4px;
+    display: inline-block;
+}
+
+.pslider {
+    width: 400px;
+}
+
+.ptoolbarlabel {
+    display: inline-block;
+    min-width: 120px;
+}
+
+.stoolbarlabel {
+    display: inline-block;
+    min-width: 96px;
+}
+
+.swtoolbarlabel {
+    display: inline-block;
+    width: 80px;
+}
+
+.tbicon {
+    position: relative;
+    vertical-align: middle;
+    top: 0px;
+}
+
