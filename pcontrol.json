@@ -22,7 +22,8 @@ elseif ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $value = $_POST['value'];
     
     if ($tt == "switcher-dxp" ||
-            $tt == "audio-onkyo") {
+        $tt == "audio-onkyo" ||
+        $tt == "proj" ) {
         queueCommand($tt, $tn, $ct, $cn, $value);
         alertControlDaemon($tt, $tn);
     }

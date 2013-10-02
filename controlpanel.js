@@ -55,6 +55,8 @@ function getCommands() {
         success : function (json) {
             if (typeof json.pcontrols != undefined)
                 loadJsonControlValues(json);
+
+            cmd_idx = json.cmd_idx;
         },
         complete : getCommandsWait
     });
@@ -244,10 +246,6 @@ function loadJsonControlValues(json) {
             var pc = jsonGetPControl(pctls[idx]);
             pc.setValue(pctls[idx].value);
 
-            if (pctls[idx].cmd_idx != undefined &&
-                    pctls[idx].cmd_idx > cmd_idx) {
-                cmd_idx = pctls[idx].cmd_idx;
-            }
         }
     }
 }

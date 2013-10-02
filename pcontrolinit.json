@@ -12,7 +12,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     foreach ($ctllist as $ctl) {
         //pclog("pcontrolinit: tt={$ctl['tt']},tn={$ctl['tn']},ct={$ctl['ct']},cn={$ctl['cn']} "); 
         if($ctl['tt'] == 'switcher-dxp' ||
-            $ctl['tt'] == 'audio-onkyo') {
+            $ctl['tt'] == 'audio-onkyo' ||
+            $ctl['tt'] == 'proj') {
             // These are handled by the pcontrol daemon now, skip
         }
         else {  

@@ -213,7 +213,7 @@ radioHTML($input_id, 8, "HDMI");
     <span>Runtime:</span>
     <span class='pcontrol' data-tt='proj' data-tn='<?=$p?>' data-ct='select'
           data-cn='LTR1' data-ut='display'></span>
-    <span>Est. Remaining:</span>
+    <span>Status:</span>
     <span class='pcontrol' data-tt='proj' data-tn='<?=$p?>' data-ct='select'
-          data-cn='LRM1' data-ut='display'></span>
+          data-cn='LST1' data-ut='display'></span>
 </div>

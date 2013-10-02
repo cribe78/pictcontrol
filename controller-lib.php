@@ -78,49 +78,69 @@ function alertControlDaemon($tt, $tn, $token = "POLL") {
     // Send a UDP message to a control daemon, alerting it to 
     // check the command queue for new commands
     global $mysqli;
-    $select_daemon = $mysqli->prepare(
-        "select port, pid from command_daemons
-            where target_type = ?
-            and target_num = ?");
-    
-    if (! $select_daemon) {
-        pclog("prepare select daemon error: {$myslqi->error}");
-        return;
-    }
 
-    $select_daemon->bind_param('si', $tt, $tn);
+    $loopcount = 0;
+    $max_loops = 5;
 
-    if (! $select_daemon->execute()) {
-        pclog("error selecting control daemon: {$select_daemon->error}");
-        return;
-    }
+    while ($loopcount <= $max_loops) {
+        $loopcount++;
+        //pclog("alertControlDaemon loop $loopcount");
 
-    $select_daemon->bind_result($port, $pid);
-    $select_daemon->store_result();
-    if ($select_daemon->fetch()) {
-        $fp = stream_socket_client("udp://127.0.0.1:$port", $errno, $errstr);
-        if (! $fp) {
-            pclog("could not connect to control daemon ($tt/$tn/$port)");
-            launchControlDaemon($tt, $tn);
-            return;
-        }    
-        stream_set_timeout($fp, 2); 
-
-        fwrite($fp, $token);
-        pclog("POLL sent to control daemon");
-        $pollresp = fread($fp, 3);
+        $select_daemon = $mysqli->prepare(
+            "select port, pid from command_daemons
+                where target_type = ?
+                and target_num = ?");
         
-        if ($pollresp == "ACK") {
-            fclose($fp);
-            pclog("ACK received from control daemon");
+        if (! $select_daemon) {
+            pclog("prepare select daemon error: {$myslqi->error}");
             return;
         }
-        pclog("NO ACK received");
-    }
-    else {
-        pclog("alertControlDaemon: no daemon registered");
-    }
 
+        $select_daemon->bind_param('si', $tt, $tn);
+
+        if (! $select_daemon->execute()) {
+            pclog("error selecting control daemon: {$select_daemon->error}");
+            return;
+        }
+
+        $select_daemon->bind_result($port, $pid);
+        $select_daemon->store_result();
+        if ($select_daemon->fetch()) {
+            if ( $port == 0 ) {
+                pclog("daemon still starting... waiting");
+                usleep(500000);
+                continue;
+            }
+
+            $fp = stream_socket_client("udp://127.0.0.1:$port", $errno, $errstr);
+            if (! $fp) {
+                pclog("could not connect to control daemon ($tt/$tn/$port)");
+                launchControlDaemon($tt, $tn);
+                return;
+            }    
+            stream_set_timeout($fp, 2); 
+
+            fwrite($fp, $token);
+            //pclog("$token sent to control daemon");
+            $pollresp = fread($fp, 3);
+            
+            if ($pollresp == "ACK") {
+                fclose($fp);
+                //pclog("ACK received from control daemon");
+                return;
+            }
+            pclog("NO ACK received from $tt:$tn (pid $pid)");
+
+            if ($loopcount == 5) {
+                pclog("killing process $pid");
+                exec("kill $pid");
+            }
+        }
+        else {
+            pclog("alertControlDaemon: no daemon registered");
+        }
+    }
+    
     launchControlDaemon($tt, $tn);
 }
 
@@ -272,6 +292,18 @@ function f32CommandAll($command, $value) {
     return($projectors);
 }    
 
+function getCmdIdx() {
+    global $mysqli;
+    $add_idx = $mysqli->prepare(
+        "insert into cmd_idxs () values ()");
+
+    if (! $add_idx->execute()) {
+        dwlog("insert cmd_idx error: $DBI::errstr");
+        return 0;
+    }
+
+    return $mysqli->insert_id;
+}
 
 function getPControl($tt, $tn, $ct, $cn) {
     if ($tt === 'proj') {
@@ -433,9 +465,11 @@ function jsonResponse($response = "") {
 function launchControlDaemon($tt, $tn) {
     global $mysqli;
     global $audio_onkyo_ip;
-    global $audio_onkyp_port;
+    global $audio_onkyo_port;
     global $switcher_dxp_ip;
     global $switcher_dxp_port;
+    global $projector_ip;
+    global $projector_port;
 
 
     $delete_daemon = $mysqli->prepare(
@@ -454,8 +488,8 @@ function launchControlDaemon($tt, $tn) {
         return;
     }
     else {
-        pclog("killing running pcontrol-daemon processes");
-        exec("killall pcontrol-daemon");
+        //pclog("killing running pcontrol-daemon processes");
+        // exec("killall pcontrol-daemon");
     }
     
     if (preg_match("/proj|scaler|switcher-dxp|audio-onkyo/", $tt) &&
@@ -470,8 +504,13 @@ function launchControlDaemon($tt, $tn) {
             $ip = $switcher_dxp_ip;
             $port = $switcher_dxp_port;
         }
+        elseif ($tt == "proj") {
+            $ip = $projector_ip[$tn];
+            $port = $projector_port;
+        }
 
-        $exec_str = "/home/chris/code/controller2/pcontrol-daemon --tt=$tt --tn=$tn "
+
+        $exec_str = "/home/chris/code/controller/pcontrol-daemon --tt=$tt --tn=$tn "
                 . " --address=$ip --port=$port";
         pclog("launching pcontrol-daemon: $exec_str");
         exec($exec_str);
@@ -512,8 +551,11 @@ function pclog($msg) {
 function setPControl($tt, $tn, $ct, $cn, $value) {
     addCommand($tt, $tn, $ct, $cn, $value);
     
-    if ($tt === 'proj') {
-        return setProjectorControl($tn, $ct, $cn, $value);
+    if ($tt == 'proj' || 
+        $tt == 'audio-onkyo' ||
+        $tt == 'switcher-dxp' ) {
+        queueCommand($tt, $tn, $ct, $cn, $value);
+        alertControlDameon($tt, $tn);
     }
     elseif ($tt === 'scaler') {
         return setScalerControl($tn, $ct, $cn, $value);
@@ -529,17 +571,20 @@ function setPControl($tt, $tn, $ct, $cn, $value) {
 
 function queueCommand($tt, $tn, $ct, $cn, $value) {
     global $mysqli;
+
+    $cmd_idx = getCmdIdx();
     $queue_command = $mysqli->prepare(
         "insert into command_queue
-            (target_type, target_num, command_type, command_name, value, status)
-            value (?, ?, ?, ?, ?, 'QUEUED')");
+        (target_type, target_num, command_type, command_name, 
+        value, status, cmd_idx)
+            value (?, ?, ?, ?, ?, 'QUEUED', ?)");
 
-    $queue_command->bind_param('sisss', $tt, $tn, $ct, $cn, $value);
+    $queue_command->bind_param('sisssi', $tt, $tn, $ct, $cn, $value, $cmd_idx);
     if (! $queue_command->execute()) 
         error_log("execute queue command error: {$mysqli->error}");
 
     
-    pclog("command queued: $tt, $tn, $ct, $cn, $value");
+    pclog("command queued: $tt, $tn, $ct, $cn, $value, $cmd_idx");
 }
 
 

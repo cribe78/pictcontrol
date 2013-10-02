@@ -6,6 +6,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     // Poll database for recent commands
     $cmd_idx = $_GET['cmd_idx'];
 
+    // Ping control daemons
+    alertControlDaemon("switcher-dxp", 1, "ALV?");
+    alertControlDaemon("audio-onkyo", 1, "ALV?");
+    alertControlDaemon("proj", 1, "ALV?");
+    alertControlDaemon("proj", 2, "ALV?");
+    alertControlDaemon("proj", 3, "ALV?");
+    alertControlDaemon("proj", 4, "ALV?");
+    alertControlDaemon("proj", 5, "ALV?");
 
     $select_commands = $mysqli->prepare(
         "select cq_id, target_type, target_num, command_name, command_type, 
@@ -19,14 +27,34 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         pclog("prepare select_commands error: {$mysqli->error}");
         jsonResponse();
     }
-    
+
     $select_commands->bind_param('i', $cmd_idx);
+
+    $select_max_idx = $mysqli->prepare(
+        "select cmd_idx_max from cmd_idx_max");
 
     $resp['pcontrols'] = array();
     $start_time = time();
     $max_elapsed = 120;
         
     while (time() - $start_time < $max_elapsed) {
+        if (! $select_max_idx->execute()) {
+            pclog("execute select_max_idx error: {$mysql->error}");
+            jsonResponse();
+        }
+
+        $select_max_idx->bind_result($cmd_idx_n);
+        $select_max_idx->store_result();
+        $select_max_idx->fetch();
+            
+        if ($cmd_idx_n <= $cmd_idx) {
+            usleep(50000);
+            continue;
+        }
+
+        $resp['cmd_idx'] = $cmd_idx_n;
+
+
         if (! $select_commands->execute()) {
             pclog("execute select_commands error: {$mysql->error}");
             jsonResponse();
@@ -48,20 +76,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
                 "cmd_idx" => $cmd_idx_r);
 
             if (! isset($alerted_devices["$tt$tn"])) {
-                alertControlDaemon($tt, $tn, "ALV?");
                 $alerted_devices["$tt$tn"] = 1;
             }
         }
         
-        if (isset($resp['pcontrols'][0])) {
-            $resp['status'] = 1;
-            jsonResponse();
-        }
-        else {
-            $elapsed = time() - $start_time;
-            //pclog("sleeping before polling DB ($elapsed elapsed)");
-            usleep(1000000);
-        }
+        
+        $resp['status'] = 1;
+        jsonResponse();
     }
 
     $resp['status'] = 1;
