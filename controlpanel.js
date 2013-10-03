@@ -212,7 +212,7 @@ function initPControls() {
     
     for (var tt in pcontrols) {
         for (var tn in pcontrols[tt]) {
-            //if (tt !== 'proj' || tn != 1)
+            if (tt !== 'scaler')
                continue;
 
             var ctllist = [];
