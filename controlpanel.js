@@ -209,34 +209,6 @@ function initPControls() {
             });
         });
     });
-    
-    for (var tt in pcontrols) {
-        for (var tn in pcontrols[tt]) {
-            if (tt !== 'scaler')
-               continue;
-
-            var ctllist = [];
-            for (var cn in pcontrols[tt][tn]) {
-                ctllist.push(pcontrols[tt][tn][cn].toArray());
-            }
-
-            $.ajax({
-                url : "/pcontrolinit.json",
-                type : "POST",
-                dataType : "json",
-                data : {
-                    tt : tt,
-                    tn : tn,
-                    ctllist: ctllist
-                },
-                success : function(json) {
-                    if (json.status == 1) {
-                        loadJsonControlValues(json);
-                    }   
-                }
-            });
-        }
-    }
 }
 
 function loadJsonControlValues(json) {
