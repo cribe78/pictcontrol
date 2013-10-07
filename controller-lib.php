@@ -470,6 +470,8 @@ function launchControlDaemon($tt, $tn) {
     global $switcher_dxp_port;
     global $projector_ip;
     global $projector_port;
+    global $scaler_ip;
+    global $scaler_port;
 
 
     $delete_daemon = $mysqli->prepare(
@@ -508,9 +510,12 @@ function launchControlDaemon($tt, $tn) {
             $ip = $projector_ip[$tn];
             $port = $projector_port;
         }
+        elseif ($tt == "scaler") {
+            $ip = $scaler_ip[$tn];
+            $port = $scaler_port;
+        }
 
-
-        $exec_str = "/home/chris/code/controller/pcontrol-daemon --tt=$tt --tn=$tn "
+        $exec_str = "./pcontrol-daemon --tt=$tt --tn=$tn "
                 . " --address=$ip --port=$port";
         pclog("launching pcontrol-daemon: $exec_str");
         exec($exec_str);

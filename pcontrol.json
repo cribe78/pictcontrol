@@ -21,16 +21,8 @@ elseif ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $cn = $_POST['cn'];
     $value = $_POST['value'];
     
-    if ($tt == "switcher-dxp" ||
-        $tt == "audio-onkyo" ||
-        $tt == "proj" ) {
-        queueCommand($tt, $tn, $ct, $cn, $value);
-        alertControlDaemon($tt, $tn);
-    }
-    else {
-        $resp['pcontrols'] = array();
-        $resp['pcontrols'][] = setPControl($tt, $tn, $ct, $cn, $value);
-    }
+    queueCommand($tt, $tn, $ct, $cn, $value);
+    alertControlDaemon($tt, $tn);
 
     $resp['status'] = 1;
     jsonResponse($resp);

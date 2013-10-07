@@ -172,8 +172,14 @@ radioHTML($scaling_id, 'G', "Squeeze");
     <span>Firmware Rev:</span>    
     <span id="s<?=$p?>inputres" data-tt='scaler' data-tn='<?=$p?>' data-ut='display' data-cn='EI'
     data-ct='select' class='pcontrol'> </span>
-    <input type='checkbox' id='<?=$test_id?>' class='pcontrol' data-tt='scaler' data-tn='<?=$p?>' data-ut='checkbox'
-        data-ct='boolean' data-cn='test' />
-    <label for='<?=$test_id?>'>Test Pattern</label>
-
+    <span id="<?=$test_id?>" class="pcontrol"  
+        data-ct='range' data-ut='radio' data-cn='CB' data-tt='scaler' data-tn='<?=$p?>'>
+<?
+radioHTML($test_id, "z", "Off");
+radioHTML($test_id, "A0", "1");
+radioHTML($test_id, "A1", "2");
+radioHTML($test_id, "A2", "3");
+radioHTML($test_id, "A3", "4");
+?>
+    </span>
 </div>

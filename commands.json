@@ -14,6 +14,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     alertControlDaemon("proj", 3, "ALV?");
     alertControlDaemon("proj", 4, "ALV?");
     alertControlDaemon("proj", 5, "ALV?");
+    alertControlDaemon("scaler", 1, "ALV?");
+    alertControlDaemon("scaler", 2, "ALV?");
+    alertControlDaemon("scaler", 3, "ALV?");
+    alertControlDaemon("scaler", 4, "ALV?");
+    alertControlDaemon("scaler", 5, "ALV?");
 
     $select_commands = $mysqli->prepare(
         "select cq_id, target_type, target_num, command_name, command_type, 
@@ -96,6 +101,7 @@ elseif ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $value = $_POST['value'];
     
     queueCommand($tt, $tn, $ct, $cn, $value);
+    alertControlDaemon($tt, $tn);
         
 
     $resp['status'] = 1;
