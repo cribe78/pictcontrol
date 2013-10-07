@@ -269,7 +269,7 @@ function setPControl($tt, $tn, $ct, $cn, $value) {
         $tt == 'switcher-dxp' ||
         $tt == 'scaler' ) {
         queueCommand($tt, $tn, $ct, $cn, $value);
-        alertControlDameon($tt, $tn);
+        alertControlDaemon($tt, $tn);
     }
     elseif ($tt === 'delay') {
         usleep($value);
