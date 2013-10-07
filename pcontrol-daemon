@@ -96,21 +96,15 @@ elsif ($target_type eq "audio-onkyo") {
 }
 elsif ($target_type eq "proj") {
     $proto = "f32";
+}  
+elsif ($target_type eq "scaler") {
+    $proto = "ia200";
 }
 
 if (! $proto) {
-    syslog("err", "no protocol defined for target_type $target_type, exiting");
+    dwlog("no protocol defined for target_type $target_type, exiting");
     exit();
 }  
-
-
-if ($DBI::errstr) {
-    syslog("err", "error connecting to rtttdb: $DBI::errstr");
-    exit();
-}
-else {
-    syslog("info", "successfully connected to pictcontrol db");
-}
 
 
 # Connect to the switcher
@@ -124,6 +118,40 @@ if (! $sock) {
 my $poll_sock = server_start();
 
 run();
+
+# cleanup_commands
+# delete old records from the command queue have that have been obsoleted 
+# by newer executions of the same command
+
+sub cleanup_commands {
+    my ($cmd_ref) = (@_);
+    my %command = %$cmd_ref;
+    
+    state $delete_commands = $dbh->prepare(
+        "delete from command_queue 
+            where target_type = ?
+            and target_num = ?
+            and command_name = ?
+            and poll <> 1
+            and cq_id <> ?
+            and (status = 'EXECUTED' || status = 'ERROR')");
+
+    if (! $delete_commands) {
+        dwlog("error preparing delete_commands: $DBI::errstr");
+    }
+
+    #dwdebug("delete_commands: $target_type, $target_num, " .
+    #        "$command{command_name}, $command{cq_id}");
+    my $rows = $delete_commands->execute($target_type, $target_num,
+                                $command{command_name}, $command{cq_id});
+    if (! $rows) {
+        dwlog("error executing delete_commands: $DBI::errstr");
+    }
+    else {
+        $rows = $delete_commands->rows();
+        dwdebug("cleanup_commands: $rows rows deleted");
+    }
+}
 
 sub db_connect {
     $dbh = 0;
@@ -158,7 +186,8 @@ sub device_connect {
     poll_usleep(2000000);
 
     if ($proto eq "iscp" ||
-        $proto eq "f32") {
+        $proto eq "f32" ||
+        $proto eq "ia200") {
         return $sock;
     }
 
@@ -248,6 +277,9 @@ sub execute_command {
     }
     elsif ($proto eq "f32") {
         return execute_command_f32(@_);
+    }
+    elsif ($proto eq "ia200") {
+        return execute_command_ia200(@_);
     }
     else {
         dwlog("command protocol not implemented: $proto");
@@ -435,6 +467,98 @@ sub execute_command_f32 {
 
     return 0;
 }
+
+
+sub execute_command_ia200 {
+    my ($cmd_ref) = (@_);
+    my %command = %$cmd_ref;
+    
+    my $cmd_name = $command{command_name};
+    my $val = $command{value};
+
+    my $cmd_str = "A00";
+    
+    if ($command{command_type} eq "query") {
+        $cmd_str .= "R" . $cmd_name;
+    }
+    elsif ($command{command_type} eq "writeonly") {
+        $cmd_str .= "W" . $cmd_name . $val;
+    }
+    else {
+        if (! look_like_number($val)) {
+            dwlog("can't process non-numeric value arg: $cmd_name $val");
+        }
+
+       $cmd_str .= sprintf("W$cmd_name%04d", $val);
+    }
+
+    my $starttime = time();
+    $sock->print("$cmd_str\n");
+    dwlog("command sent: $cmd_str");
+    
+    # Give it a bit to come up with an answer
+    my $max_wait = 2000000; # 2s
+    my $resp = telnet_read($sock);
+    my $elapsed = 1000000 * (time() - $starttime);
+    
+    while (length($resp) == 0 && $elapsed < $max_wait) {
+        poll_usleep(20000);
+        $resp = telnet_read($sock);
+        $elapsed = 1000000 * (time() - $starttime);
+    }
+        
+    if (length($resp) == 0) {
+        dwlog("waited 2s, couldn't get nothin'");
+        return 0;
+    }
+
+    dwlog("response: $resp");
+
+    $val = "";
+    my $fc = substr($resp, 0, 1);
+    #dwdebug("fc: $fc");
+
+    if ($fc eq "V") {
+        if (length($resp) < 5) {
+            dwlog("short numeric response: $resp");
+            return 0;
+        }
+
+        $val = substr($resp, 1, 4);
+        $val = sprintf("%4d", $val);
+    }
+    elsif ($fc eq "v") {
+        $val = substr($resp, 1);
+    }
+    elsif ($fc eq "E") {
+        dwlog("command error");
+        return 0;
+    }
+    elsif ($fc eq "K") {
+        # Set value commands will respond with "K" even if the
+        # value was not set as requested
+        # Send a follow up query command
+        
+        if ($command{command_type} ne "writeonly") {
+            $command{command_type} = "query";
+            return execute_command_ia200(\%command);
+        }
+    }
+    else {
+        dwlog("invalid response");
+        return 0;
+    }
+
+    #dwdebug("val: $val");
+    if ($val ne "") {
+        update_command_value($command{cq_id}, $val);
+    }
+            
+    return 1;
+}
+
+
+
 
 
 sub execute_command_iscp {
@@ -637,6 +761,10 @@ sub run {
                 my $res = execute_command($commands{$id});
                 my $status = $res ? "EXECUTED" : "FAILED";
                 update_command_status($id, $status);
+
+                if ($status eq "EXECUTED") {
+                    cleanup_commands($commands{$id});
+                }
             }
             
             set_max_idx();
@@ -661,6 +789,10 @@ sub run {
                 my $res = execute_command($commands{$id});
                 my $status = $res ? "EXECUTED" : "FAILED";
                 update_command_status($id, $status);
+                
+                if ($status eq "EXECUTED") {
+                    cleanup_commands($commands{$id});
+                }
 
                 # Break out of this if there are more client
                 # commands to process
@@ -696,14 +828,14 @@ sub server_poll {
     while (my $addr = $poll_sock->recv($data, 4)) {
         $ret_val = 1;
         my $ack = "ACK";
-        dwdebug("$data received");
+        #dwdebug("$data received");
 
         if ($data eq "ALV?") {
             $ret_val = 0;
         }
 
         $poll_sock->send($ack);
-        dwdebug("ack sent");
+        #dwdebug("ack sent");
     }
 
     return $ret_val;
@@ -816,6 +948,7 @@ sub update_command_value {
         return 0;
     }
 
+    dwdebug("command value updated: $cq_id:$value"); 
     return 1;
 }
 

@@ -171,7 +171,7 @@ function initPControls() {
         var pc = jqGetPControl(jqo);
         if (pc.ct == 'stateless') { 
             $.ajax({
-                url : "/pcontrol.json",
+                url : "/commands.json",
                 type : "POST",
                 dataType : "json",
                 data : {
@@ -385,7 +385,7 @@ PControl.prototype.updateValue = function(val) {
     if (val != this.value) {
         var pctl = this;
         $.ajax( {
-            url : "/pcontrol.json",
+            url : "/commands.json",
             type : "POST",
             dataType : "json",
             data : {

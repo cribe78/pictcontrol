@@ -39,9 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $resp['pcontrols'] = array();
 
     while ($select_seq->fetch()) {
-        $ra = setPControl($tt, $tn, $ct, $cn, $val);
-        if ($ra != null) 
-            $resp['pcontrols'][] = $ra;
+        setPControl($tt, $tn, $ct, $cn, $val);
     }
 
     $resp['status'] = 1;
