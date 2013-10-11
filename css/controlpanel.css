@@ -22,7 +22,7 @@
 
 .picttb {
     padding: 4px;
-    display: inline-block;
+ /*   display: inline-block; */
 }
 
 .pslider {
@@ -32,6 +32,11 @@
 .ptoolbarlabel {
     display: inline-block;
     min-width: 120px;
+}
+
+#seqsortlist {
+    list-style: none;
+    cursor: move;
 }
 
 .stoolbarlabel {

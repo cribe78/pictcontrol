@@ -1,10 +1,11 @@
 
-var projectors = []; 
-var scalers = [];
 var screenList = [ "1", "2", "3", "4", "5" ];
 var pcontrols = {};
 var log_idx = 0;
 var cmd_idx = 0;
+var id_idx = 1;
+var sequences = {};
+
 
 // Pict button
 // - button types:
@@ -40,9 +41,41 @@ $( document ).ready(function() {
     $("#tabsD").tabs();
 
     initPControls();
+    initSeqEditor();
     getLogs();
     getCommands();
 });
+
+
+function commandSortable(tt, tn, cn, value) {
+    var cnDisp = cn;
+    if (commands[tt][cn]) {
+        cnDisp = commands[tt][cn].name;
+    }
+
+    var valDisp = value;
+    if (commands[tt][cn]) {
+        if (commands[tt][cn].type == "select") {
+            valDisp = commands[tt][cn].values[value];
+        }
+        else if (commands[tt][cn].type == "boolean") {
+            valDisp = value == 1 ? "On" : "Off";
+        }
+    }
+    
+    var id = "cs" + id_idx;
+    id_idx++;
+    
+    var cmdhtml = "<li id='" + id + "' class='ui-state-default' data-tt='" 
+                    + tt + "' data-tn='" + tn
+                    + "' data-cn='" + cn + "' data-value='" + value + "'>" 
+                    + tt + ":" + tn
+                    + " " + cnDisp + " " + valDisp
+                    + "<button class='deletecmd'></button>";
+
+    return cmdhtml;
+}
+
 
 
 function getCommands() {
@@ -125,6 +158,196 @@ function jsonGetPControl(jo) {
 }
 
 
+function initDeleteCmd() {
+    $(".deletecmd").button({
+        icons: { primary : 'ui-icon-trash' }
+    })
+    .click( function() {
+        $(this).parent().remove();
+        updateSeqList();
+    });
+
+}
+
+function initSeqEditor() {
+    $.ajax({
+        url : "/sequences.json",
+        dataType : "json",
+        success : function (json) {
+            if (typeof json.sequences != undefined)
+                loadSequences(json.sequences);
+
+            console.log("sequences got");
+        }
+    });
+
+    var nctargets = "";
+    for (var pc in commands) {
+        console.log("command target: " + pc);
+        nctargets += selectOption(pc, pc);
+    }
+
+    $("#newcommandtt").append(nctargets);
+
+    $("#newcommandtt").change( function() {
+        var cmdopts = selectOption("Command", "Command");
+        var tt = this.value;
+
+        for (var cn in commands[tt]) {
+            var name = cn;
+            if (commands[tt][cn] != undefined) {
+                name = commands[tt][cn].name;
+            }
+            if (! commands[tt][cn].readonly) {
+                cmdopts += selectOption(cn, name);
+            }
+        }
+
+        $("#newcommandcn").html(cmdopts);
+
+    });
+
+    $("#newseqadddiv").hide();
+    $("#newcommandrangevalue").hide();
+
+    $("#newseqadd").button()
+    .click( function() {
+        var name = $("#newseq").val();
+        $.ajax({
+            url : "/sequences.json",
+            type : "POST",
+            dataType : "json",
+            data : {
+                sequence : { name : name }
+            },
+            success : function(json) {
+                if (json.status == 1) {
+                    var newopt = selectOption(json.sequence.seq_id, 
+                                              json.sequence.name);
+                    $("#newseqadddiv").hide();
+                    $("#seqs").append(newopt)
+                    .val(json.sequence.seq_id);
+                    $("#seqselectdiv").show();
+
+                    console.log("sequence added");
+                }
+            }
+        });
+        
+    });
+
+    $("#newseqcancel").button()
+    .click( function() {
+        $("#newseqadddiv").hide();
+        $("#seqselectdiv").show();
+        $("#newseqadd").val("Name");
+    });
+        
+    $("#seqexecute").button()
+    .click( function() {
+        var seq_id = $("#seqs").val();
+        $.ajax({
+            url : "/exec-sequence.json",
+            type : "POST",
+            dataType : "json",
+            data : {
+                seq_id : seq_id
+            },
+            success : function(json) {
+                if (json.status == 1) {
+                    // no need to do nothing
+                }
+            }
+        });
+    });
+
+
+
+    $("#seqs").change( function() {
+        if ( this.value == "new" ) {
+            $("#seqselectdiv").hide();
+            $("#newseqadddiv").show();
+            $("#seqsortlist").empty();
+        }
+        else {
+            loadSeq(this.value);
+        }
+    });
+
+    
+    $("#newcommandcn").change( function() {
+        var cn = this.value;
+        var tt = $("#newcommandtt").val();
+        var selecthtml = "";
+
+        var ct = commands[tt][cn].type;
+
+        if (ct == "boolean") {
+            selecthtml += selectOption(0, "Off");
+            selecthtml += selectOption(1, "On");
+            $("#newcommandvalue").show();
+            $("#newcommandrangevalue").hide();
+        }
+        else if (ct == "select") {
+            for (var val in commands[tt][cn].values) {
+                selecthtml += selectOption(val, commands[tt][cn].values[val]);
+            }
+            $("#newcommandvalue").show();
+            $("#newcommandrangevalue").hide();
+        }
+        else if (ct == "range") {
+            var min = commands[tt][cn].min;
+            var max = commands[tt][cn].max;
+            $("#newcommandrangevalue").spinner({
+                spin: function(event, ui ) {
+                    if ( ui.value > max ) {
+                        $(this).spinner("value", max);
+                        return false;
+                    }
+                    else if ( ui.value < min) {
+                        $(this).spinner("value", min);
+                        return false;
+                    }
+                }
+            });
+            
+            $("#newcommandvalue").hide();
+            $("#newcommandrangevalue").show();
+        }
+
+        $("#newcommandvalue").html(selecthtml);
+    });
+
+
+
+    $("#newcommandadd").click(function() {
+        var tt = $("#newcommandtt").val();
+        var tn = $("#newcommandtn").val();
+        var cn = $("#newcommandcn").val();
+        var val = $("#newcommandvalue").val();
+        
+        if (cn == "Command" ||
+            tt == "Target") {
+            return;
+        }
+
+        if (commands[tt][cn].type == "range") {
+            val = $("#newcommandrangevalue").val();
+        }
+
+        var htmlli = commandSortable(tt, tn, cn, val);
+
+        $("#seqsortlist").append(htmlli);
+        updateSeqList();
+        initDeleteCmd();
+    });
+
+    $("#seqsortlist").sortable( {
+        update : updateSeqList
+    });
+}
+
+
 
 function initPControls() {
     // Go through all of the input elements in the document and build 
@@ -190,25 +413,10 @@ function initPControls() {
         }
     });
 
-    $(".pseq").each( function() {
-        var name = $(this).data("name");
-        $(this).button()
-        .click( function (event) {
-            $.ajax({
-                url : "/exec-sequence.json",
-                type : "POST",
-                dataType : "json",
-                data : {
-                    seq : name
-                },
-                success : function(json) {
-                    if (json.status == 1) {
-                        loadJsonControlValues(json);
-                    }
-                }
-            });
-        });
+    $(".targetrefresh").button().click( function() {
+        refreshTarget($(this).data("tt"), $(this).data("tn"));
     });
+
 }
 
 function loadJsonControlValues(json) {
@@ -232,6 +440,60 @@ function loadLogMessages(logs) {
         log_idx = logs[logs.length - 1].log_id;
 
     $("#tabsA-6").prepend(logStr);
+}
+
+
+function loadSeq(seqID) { 
+    var listhtml = "";
+
+    console.log("load sequence " + seqID); 
+    for (var idx in sequences[seqID].commands) {
+        var cmd = sequences[seqID].commands[idx];
+
+        listhtml += commandSortable(cmd.tt, cmd.tn, cmd.cn, cmd.value);
+    }
+
+    $("#seqsortlist").html(listhtml);
+
+    initDeleteCmd();
+}
+
+function loadSequences(json) {
+    sequences = json;
+    
+    $(".pseq").each( function() {
+        var seqID = $(this).data("id");
+
+        $(this).button()
+        .click( function (event) {
+            $.ajax({
+                url : "/exec-sequence.json",
+                type : "POST",
+                dataType : "json",
+                data : {
+                    seq_id : seqID
+                },
+                success : function(json) {
+                    if (json.status == 1) {
+                        // no need to do nothing
+                    }
+                }
+            });
+        })
+        .children("span").text(sequences[seqID].name);
+    });
+
+    var opthtml = "";
+
+    for (var seq_id in sequences) {
+        opthtml += selectOption(seq_id, sequences[seq_id].name);
+    }
+    
+    opthtml += selectOption("new", "New...");
+
+    $("#seqs").html(opthtml);
+
+    loadSeq($("#seqs").val());
 }
 
 function pctlVal(jqo) {
@@ -299,6 +561,33 @@ PControl.prototype.setValue = function(val) {
         var ctl = this.jqObjects[ctlIdx];
         setJQCtlValue(ctl, val);       
     }
+}
+
+function refreshTarget(tt, tn) {
+   for (var cmd in commands[tt]) { 
+        var co = commands[tt][cmd];
+
+        if (! co.writeonly) {
+            $.ajax( {
+                url : "/commands.json",
+                type : "POST",
+                dataType : "json",
+                data : {
+                    ct : "query",
+                    tt : tt,
+                    tn : tn,
+                    cn : cmd,
+                    value : "?"
+                }
+            });      
+        }
+   }
+}
+
+
+function selectOption(value, label) {
+    var opthtml = "<option value='" + value + "'>" + label + "</option>";
+    return opthtml;
 }
 
 function setJQCtlValue(ctl, val) {
@@ -380,6 +669,41 @@ PControl.prototype.updateValue = function(val) {
 }
 
 
+function updateSeqList() {
+    var cmdList = $("#seqsortlist").sortable("toArray");
+    var name = $("#seqs option:selected").text();
+
+    console.log("list sorted");
+    var sequence = { name : name,
+                     seq_id : $("#seqs").val() };
+    sequence.commands = { };
+
+    for (var idx = 0; idx < cmdList.length; idx++) {
+        var item = $("#" + cmdList[idx]);
+        sequence.commands[idx] = {
+            tt : item.data("tt"),
+            tn : item.data("tn"),
+            cn : item.data("cn"),
+            value : item.data("value")
+        };
+    }
+
+
+    $.ajax( {
+        url : "/sequences.json",
+        type : "POST",
+        dataType : "json",
+        data : {
+            sequence : sequence
+        },
+        success : function(json) {
+            if (json.status == 1) {
+                sequences[json.sequence.seq_id] = json.sequence;
+                console.log("sequence updated");
+            }
+        }
+    });
+}
 
 
 

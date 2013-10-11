@@ -1,6 +1,6 @@
 <?php
 
-$js_includes = array("controlpanel.js");
+$js_includes = array("controldefs.js", "controlpanel.js");
 $css_includes = array("css/controlpanel.css");
 require("sub/head.php");
 
@@ -15,6 +15,7 @@ require("sub/head.php");
         <li><a href="#tabsA-4">Switchers</a></li>
         <li><a href="#tabsA-5">Audio</a></li>
         <li><a href="#tabsA-6">Log</a></li>
+        <li><a href="#tabsA-7">Sequences</a></li>
     </ul>
 
     <div id="tabsA-1">
@@ -79,4 +80,8 @@ require("sub/head.php");
 <?        include("sub/audioonkyodiv.php"); ?>
     </div>
     <div id="tabsA-6" class='ui-widget-content'>
-    <div> 
+    </div> 
+    <div id="tabsA-7">
+<?      include("sub/admindiv.php");   ?>
+    </div>
+

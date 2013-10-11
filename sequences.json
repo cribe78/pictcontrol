@@ -1,0 +1,150 @@
+<?php
+
+require("sub/head.php");
+
+
+if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+
+    $select_seqs = $mysqli->prepare(
+        "select sequence_id, name, description from sequences
+        order by sequence_id");
+
+    if (! $select_seqs) {
+        pclog("prepare select seqs error: {$mysqli->error}");
+        jsonResponse();
+    }
+
+    $select_commands = $mysqli->prepare(
+        "select target_type, target_num, command_name, value, idx
+            from sequence_commands
+            where sequence_id = ?
+            order by idx");
+
+    if (! $select_commands) {
+        pclog("prepare select commands error: {$mysqli->error}");
+        jsonResponse();
+    }
+
+    if ( ! $select_seqs->execute()) {
+        pclog("execute select seqs error: {$mysqli->error}");
+        jsonResponse();
+    }
+
+    $select_seqs->bind_result($seq_id, $name, $description);
+    $select_seqs->store_result();
+
+    $resp['sequences'] = array();
+
+    while ($select_seqs->fetch()) {
+        $r_seq_id = $seq_id;
+        $select_commands->bind_param('i', $r_seq_id);
+                
+        if ( ! $select_commands->execute()) {
+            pclog("execute select commands error: {$mysqli->error}");
+            jsonResponse();
+        }
+
+        $select_commands->bind_result($tt, $tn, $cn, $value, $idx);
+        $select_commands->store_result();
+
+        $resp['sequences'][$seq_id] = array( "name" => $name,
+            "desc" => $description );
+
+        $commands = array();
+
+        while($select_commands->fetch()) {
+            //pclog("command: $idx, $tt, $tn, $cn, $value");
+            $commands[$idx] = array(   "tt" => $tt,
+                                       "tn" => $tn,
+                                       "cn" => $cn,
+                                       "value" => $value );
+        }
+
+        $resp['sequences'][$seq_id]['commands'] = $commands;
+
+    }
+
+    $resp['status'] = 1;
+    jsonResponse();
+}
+
+elseif ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $sequence = $_POST['sequence'];
+
+    if (! $sequence) { 
+        pclog("no sequence posted");
+        jsonResponse();
+    }
+
+    $insert_seq = $mysqli->prepare( 
+        "insert into sequences (sequence_id, name) values (?, ?)
+            on duplicate key update name = VALUES(name)");
+
+    if (! $insert_seq) {
+        pclog("error preparing insert_seq: {$mysqi->error}");
+        jsonResponse();
+    }
+
+    $seq_id = 0;
+    if (isset($sequence['seq_id'])) {
+        $seq_id = $sequence['seq_id'];
+    }
+
+    $insert_seq->bind_param('is',$seq_id, $sequence['name']);
+
+    if (! $insert_seq->execute()) {
+        pclog("insert seq error: {$mysqli->error}");
+        jsonResponse();
+    }
+
+    if (! isset($sequence['seq_id'])) {
+        $seq_id = $mysqli->insert_id;
+        $sequence['seq_id'] = $seq_id;
+
+        $resp['sequence'] = $sequence;
+        $resp['status'] = 1;
+        jsonResponse();
+    }
+
+    $clear_seq = $mysqli->prepare(
+        "delete from sequence_commands where sequence_id = ?");
+
+    if (! $clear_seq) {
+        pclog("error preparing clear_seq: {$mysqli->error}");
+        jsonResponse();
+    }
+
+    $clear_seq->bind_param('i', $seq_id);
+
+    if (! $clear_seq->execute()) {
+        pclog("error executing clear seq: {$mysqli->error}");
+        jsonResponse();
+    }
+
+    $insert_seq_cmd = $mysqli->prepare(
+        "insert into sequence_commands (sequence_id, idx, target_type, target_num, command_name, value) 
+            values (?, ?, ?, ?, ?, ?)");
+
+    if (! $insert_seq_cmd) {
+        pclog("error preparing insert seq cmd: {$mysqli->error}");
+        jsonResponse();
+    }
+    
+    $insert_seq_cmd->bind_param('iisiss', $seq_id, $idx, $tt, $tn, $cn, $value);
+
+    foreach ($sequence['commands'] as $idx => $cmd) {
+        $tt = $cmd['tt'];
+        $tn = $cmd['tn'];
+        $cn = $cmd['cn'];
+        $value = $cmd['value'];
+
+        //pclog("insert seq cmd: $seq_id, $idx, $tt, $tn, $cn, $value");
+        $insert_seq_cmd->execute();
+    }
+
+    $resp['sequence'] = $sequence;
+    $resp['status'] = 1;
+
+    jsonResponse();
+}
+    

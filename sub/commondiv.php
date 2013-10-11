@@ -1,11 +1,11 @@
 <?php
 ?>
 
-<button class="pseq" data-name="proj-on" />Projectors On</button>
-<button class="pseq" data-name="proj-off" />Projectors Off</button>
-<button class="pseq" data-name="all-dvi" />All DVI</button>
-<button class="pseq" data-name="comp234" />Comp 2-3-4</button>
-
+<button class="pseq" data-id="1" />Seq. 1</button>
+<button class="pseq" data-id="2" />Seq. 2</button>
+<button class="pseq" data-id="3" />Seq. 3</button>
+<button class="pseq" data-id="4" />Seq. 4</button>
+<br>
 
 <?
 foreach ($screen_list as $p) {

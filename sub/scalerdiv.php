@@ -182,4 +182,5 @@ radioHTML($test_id, "A2", "3");
 radioHTML($test_id, "A3", "4");
 ?>
     </span>
+    <button class='targetrefresh' data-tt='scaler' data-tn='<?=$p?>'>Refresh</button>
 </div>
