@@ -6,6 +6,8 @@
 // tt = target_type
 // tn = target_num 
 
+include("sub/controldefs.php");
+
 $screen_list = array(1, 2, 3, 4, 5);
 $screen_names = array( 1 => "Far Left",
                        2 => "Left",
@@ -298,6 +300,26 @@ function queueCommand($tt, $tn, $ct, $cn, $value) {
     pclog("command queued: $tt, $tn, $ct, $cn, $value, $cmd_idx");
 }
 
+function radioBar($tt, $tn, $cn, $values = NULL) {
+    global $commands;
+    $id = getID();
+    $label = $commands[$tt][$cn]['name'];
+
+    echo("<div class='pinputdiv ui-widget-header ui-corner-all'>
+            <div class='ptoolbarlabel'>$label</div>
+            <span id='$id' class='pcontrol'  data-ut='radio' 
+                data-cn='$cn' data-tt='$tt' data-tn='$tn'>");
+
+    if (is_null($values)) {
+        $values = $commands[$tt][$cn]['values'];
+    }
+
+    foreach ($values as $key => $value) {
+        radioHTML($id, $key, $value);
+    }
+
+    echo("</span></div>");
+}
 
 function radioHTML($set_id, $value, $label) {
     $id = getID();
@@ -306,6 +328,15 @@ function radioHTML($set_id, $value, $label) {
             class='source-opt' data-value='$value' />
                 <label for='$id'>$label</label>");
 
+}
+
+
+function sliderCombo($tt, $tn, $cn) {
+    echo( "<span class='plabel' data-tt='$tt' data-cn='$cn'></span>
+           <input class='pcontrol' data-tt='$tt' data-tn='$tn' 
+           data-cn='$cn' data-ut='spinner' /> 
+           <div class='pcontrol' data-tt='$tt' data-tn='$tn' 
+             data-ut='slider'   data-cn='$cn'> </div>" );
 }
 
 

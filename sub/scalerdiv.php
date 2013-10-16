@@ -30,50 +30,11 @@ $scaling_id = getID();
 $source_id = getID();
 $keystone_id = getID();
 
+radioBar("scaler", $p, "BA");
+radioBar("scaler", $p, "AB");
+radioBar("scaler", $p, "FA");
+
 ?>
-<div class='ssourcediv ui-widget-header ui-corner-all'>
-    <div class='stoolbarlabel'>Input:</div>
-    <span id="<?=$source_id?>" class="pcontrol"  
-        data-ct='writeonly' data-ut='radio' data-cn='BA' data-tt='scaler' data-tn='<?=$p?>'>
-<?
-radioHTML($source_id, 'A', "Component");
-radioHTML($source_id, 'B', "VGA");
-radioHTML($source_id, 'C', "DVI");
-radioHTML($source_id, 'D', "S-Video");
-radioHTML($source_id, 'E', "Composite");
-radioHTML($source_id, 'F', "SDI");
-radioHTML($source_id, 'G', "HDMI");
-?>
-    </span>
-</div>
-<div class='sscalingdiv ui-widget-header ui-corner-all'>
-    <div class='stoolbarlabel'>Scaling:</div>
-    <span id="<?=$scaling_id?>" class="pcontrol"  
-        data-ct='writeonly' data-ut='radio' data-cn='AB' data-tt='scaler' data-tn='<?=$p?>'>
-<?
-radioHTML($scaling_id, 'A', "Standard");
-radioHTML($scaling_id, 'B', "Full Screen");
-radioHTML($scaling_id, 'C', "Crop");
-radioHTML($scaling_id, 'D', "Anamorphic");
-radioHTML($scaling_id, 'E', "Flexview");
-radioHTML($scaling_id, 'F', "TheatreScope");
-radioHTML($scaling_id, 'G', "Squeeze");
-?>
-    </span>
-</div>
-<div id='flipheader' class="ui-widget-header" >
-    <div class='stoolbarlabel'>Flip/Mirror:</div>
-    <span id="<?=$keystone_id?>" class="pcontrol"  
-        data-ct='writeonly' data-ut='radio' data-cn='FA' data-tt='scaler' data-tn='<?=$p?>'>
-<?
-        radioHTML($keystone_id, 'z', "Reset");
-        radioHTML($keystone_id, 'I', "Front Tabletop");
-        radioHTML($keystone_id, 'J', "Front Ceiling");
-        radioHTML($keystone_id, 'K', "Rear Tabletop");
-        radioHTML($keystone_id, 'L', "Rear Ceiling");
-?>
-    </span>
-</div>  
 
 <div class='keystonediv ui-widget-content'> 
     <div id='keystoneheader' class="ui-widget-header" >
@@ -94,9 +55,9 @@ radioHTML($scaling_id, 'G', "Squeeze");
 ?>
     <span><?=$label?>:</span>
         <span class="pcontrol"  data-tt='scaler' data-tn='<?=$p?>'  
-        data-ut='display' data-ct='range' data-cn='FA<?=$ks?>'></span> 
+        data-ut='display'   data-cn='FA<?=$ks?>'></span> 
     <div id='<?=$id?>' class="scaler<?=$p?> keystoneslider pcontrol" 
-        data-tt='scaler' data-tn='<?=$p?>'  data-ut='slider' data-ct='range' data-cn='FA<?=$ks?>'
+        data-tt='scaler' data-tn='<?=$p?>'  data-ut='slider'   data-cn='FA<?=$ks?>'
         data-min='<?=$min?>' data-max='<?=$max?>'> 
     
     </div>
@@ -110,18 +71,10 @@ radioHTML($scaling_id, 'G', "Squeeze");
 
 <div class="sposition ui-widget-content" >
     <div class="spositionheader ui-widget-header ui-corner-all">Position Controls</div>
-   <span>Vertical:</span> 
-    <span class="pcontrol" data-tt='scaler' data-tn='<?=$p?>'
-        data-ut='display' data-ct='range' data-cn='ACA'> </span>
-    <div class="pcontrol" data-tt='scaler' data-tn='<?=$p?>'
-        data-ut='slider' data-ct='range' data-cn='ACA'
-        data-min='-1' data-max='100'> </div>
-   <span>Horizontal:</span> 
-    <span class="pcontrol" data-tt='scaler' data-tn='<?=$p?>'
-        data-ut='display' data-ct='range' data-cn='ACB'> </span>
-    <div class="pcontrol" data-tt='scaler' data-tn='<?=$p?>'
-        data-ut='slider' data-ct='range' data-cn='ACB'
-        data-min='-1' data-max='400'> </div>
+<?    
+    sliderCombo("scaler", $p, "ACA");  
+    sliderCombo("scaler", $p, "ACB");
+?>  
 </div>
 <?
     $left_id = getID();
@@ -133,47 +86,45 @@ radioHTML($scaling_id, 'G', "Squeeze");
 <div class="sedges ui-widget-content">
     <div class="sedgesheader ui-widget-header ui-corner-all">Edge Blending</div>
     <input type='checkbox' data-ut='checkbox' data-tt='scaler' data-tn='<?=$p?>'
-    data-ct='boolean' data-cn='FFD' id='<?=$top_id?>' class='pcontrol' />
+      data-cn='FFD' id='<?=$top_id?>' class='pcontrol' />
     <label for='<?=$top_id?>'>Top</label> 
     <span class="pcontrol"  data-tt='scaler' data-tn='<?=$p?>'  
-        data-ut='display' data-ct='range' data-cn='FFH'></span> 
+        data-ut='display'   data-cn='FFH'></span> 
     <div class="scaler<?=$p?> edgeslider pcontrol" 
-        data-tt='scaler' data-tn='<?=$p?>'  data-ut='slider' data-ct='range' data-cn='FFH'
-        data-min='0' data-max='511'> </div>
+        data-tt='scaler' data-tn='<?=$p?>'  data-ut='slider'   data-cn='FFH'> </div>
     <input type='checkbox' data-ut='checkbox' data-tt='scaler' data-tn='<?=$p?>'
-    data-ct='boolean' data-cn='FFA' id='<?=$bottom_id?>' class='pcontrol' />
+      data-cn='FFA' id='<?=$bottom_id?>' class='pcontrol' />
     <label for='<?=$bottom_id?>'>Bottom</label> 
     <span class="pcontrol"  data-tt='scaler' data-tn='<?=$p?>'  
-        data-ut='display' data-ct='range' data-cn='FFE'></span> 
+        data-ut='display'   data-cn='FFE'></span> 
     <div class="scaler<?=$p?> edgeslider pcontrol" 
-        data-tt='scaler' data-tn='<?=$p?>'  data-ut='slider' data-ct='range' data-cn='FFE'
-        data-min='0' data-max='511'> </div>
+        data-tt='scaler' data-tn='<?=$p?>'  data-ut='slider'   data-cn='FFE'> </div>
     <input type='checkbox' data-ut='checkbox' data-tt='scaler' data-tn='<?=$p?>'
-    data-ct='boolean' data-cn='FFB' id='<?=$left_id?>' class='pcontrol' />
+      data-cn='FFB' id='<?=$left_id?>' class='pcontrol' />
     <label for='<?=$left_id?>'>Left</label> 
     <span class="pcontrol"  data-tt='scaler' data-tn='<?=$p?>'  
-        data-ut='display' data-ct='range' data-cn='FFF'></span> 
+        data-ut='display'   data-cn='FFF'></span> 
     <div class="scaler<?=$p?> edgeslider pcontrol" 
-        data-tt='scaler' data-tn='<?=$p?>'  data-ut='slider' data-ct='range' data-cn='FFF'
-        data-min='0' data-max='511'> </div>
+        data-tt='scaler' data-tn='<?=$p?>'  data-ut='slider'   data-cn='FFF'> </div>
     <input type='checkbox' data-ut='checkbox' data-tt='scaler' data-tn='<?=$p?>'
-    data-ct='boolean' data-cn='FFC' id='<?=$right_id?>' class='pcontrol' />
+      data-cn='FFC' id='<?=$right_id?>' class='pcontrol' />
     <label for='<?=$right_id?>'>Right</label> 
     <span class="pcontrol"  data-tt='scaler' data-tn='<?=$p?>'  
-        data-ut='display' data-ct='range' data-cn='FFG'></span> 
+        data-ut='display'   data-cn='FFG'></span> 
     <div class="scaler<?=$p?> edgeslider pcontrol" 
-        data-tt='scaler' data-tn='<?=$p?>'  data-ut='slider' data-ct='range' data-cn='FFG'
-        data-min='0' data-max='511'> </div>
+        data-tt='scaler' data-tn='<?=$p?>'  data-ut='slider'   data-cn='FFG'
+           > </div>
 </div>
 <div id='s<?=$p?>sourcetb' class="scaler<?=$p?> ui-widget-header">
     <span>Input Res:</span>    
     <span id="s<?=$p?>inputres" data-tt='scaler' data-tn='<?=$p?>' data-ut='display' data-cn='EA'
-    data-ct='select' class='pcontrol'> </span>
+      class='pcontrol ui-state-highlight'> </span>
     <span>Firmware Rev:</span>    
     <span id="s<?=$p?>inputres" data-tt='scaler' data-tn='<?=$p?>' data-ut='display' data-cn='EI'
-    data-ct='select' class='pcontrol'> </span>
+      class='pcontrol ui-state-highlight'> </span>
+    <span>Test Pattern:</span>
     <span id="<?=$test_id?>" class="pcontrol"  
-        data-ct='range' data-ut='radio' data-cn='CB' data-tt='scaler' data-tn='<?=$p?>'>
+          data-ut='radio' data-cn='CB' data-tt='scaler' data-tn='<?=$p?>'>
 <?
 radioHTML($test_id, "z", "Off");
 radioHTML($test_id, "A0", "1");

@@ -8,10 +8,11 @@ require("sub/head.php");
 ?>
 
 <div id="tabsA">
-    <ul>
+    <ul id="tablistA">
         <li><a href="#tabsA-1">Basic</a></li>
         <li><a href="#tabsA-2">Projectors</a></li>
-        <li><a href="#tabsA-3">Scalers</a></li>
+        <li><a href="#tabsA-3">Scaler(1)</a></li>
+        <li><a href="#tabsA-8">Scaler(2)</a></li>
         <li><a href="#tabsA-4">Switchers</a></li>
         <li><a href="#tabsA-5">Audio</a></li>
         <li><a href="#tabsA-6">Log</a></li>
@@ -57,6 +58,25 @@ require("sub/head.php");
                 echo("<div id='tabsC-$p'>");
                 $screen_current = $p;
                 include("sub/scalerdiv.php");
+                echo("</div>");
+            }
+    ?>
+        </div>
+    </div>
+    <div id="tabsA-8">
+        <div id="tabsE">
+            <ul>
+                <li><a href="#tabsE-1"><span><img src="images/<?=$screen_icons[1]?>" class="tbicon" /></span></a></li>
+                <li><a href="#tabsE-2"><span><img src="images/<?=$screen_icons[2]?>" class="tbicon" /></span></a></li>
+                <li><a href="#tabsE-3"><span><img src="images/<?=$screen_icons[3]?>" class="tbicon" /></span></a></li>
+                <li><a href="#tabsE-4"><span><img src="images/<?=$screen_icons[4]?>" class="tbicon" /></span></a></li>
+                <li><a href="#tabsE-5"><span><img src="images/<?=$screen_icons[5]?>" class="tbicon" /></span></a></li>
+            </ul>
+    <? 
+            foreach ($screen_list as $p) {
+                echo("<div id='tabsE-$p'>");
+                $screen_current = $p;
+                include("sub/scalerpic.php");
                 echo("</div>");
             }
     ?>

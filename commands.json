@@ -68,9 +68,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         $select_commands->bind_result($cq_id, $tt, $tn, $cn, $ct, $value, $cmd_idx_r);
         $select_commands->store_result();
         
-        $alerted_devices = array();
-
-
         while ($select_commands->fetch()) {
             $resp['pcontrols'][] = array( "cq_id" => $cq_id,
                 "tt" => $tt,
@@ -80,9 +77,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
                 "value" => $value,
                 "cmd_idx" => $cmd_idx_r);
 
-            if (! isset($alerted_devices["$tt$tn"])) {
-                $alerted_devices["$tt$tn"] = 1;
-            }
         }
         
         

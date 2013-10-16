@@ -480,7 +480,6 @@ sub execute_command_ia200 {
         return 0;
     }
     
-    
     my $cmd_name = $command{command_name};
     my $val = $command{value};
 
@@ -515,6 +514,7 @@ sub execute_command_ia200 {
         
     if (length($resp) == 0) {
         dwlog("waited 2s, couldn't get nothin'");
+        $recurse_count = 0;
         return 0;
     }
 
@@ -531,13 +531,16 @@ sub execute_command_ia200 {
         }
 
         $val = substr($resp, 1, 4);
-        $val = sprintf("%4d", $val);
+        $val =~ s/^0{1,3}//;
+        dwlog("processed val: $val");
+
     }
     elsif ($fc eq "v") {
         $val = substr($resp, 1);
     }
     elsif ($fc eq "E") {
         dwlog("command error");
+        $recurse_count = 0;
         return 0;
     }
     elsif ($fc eq "K") {
@@ -561,7 +564,8 @@ sub execute_command_ia200 {
     if ($val ne "") {
         update_command_value($command{cq_id}, $val);
     }
-            
+     
+    $recurse_count = 0;
     return 1;
 }
 
@@ -774,6 +778,8 @@ sub run {
                     cleanup_commands($commands{$id});
                 }
             }
+
+            dwlog("commands processed");
             
             set_max_idx();
 
@@ -784,14 +790,16 @@ sub run {
                 next MAIN_LOOP;
             }
         }
-
+        
         while (my $resp = telnet_read($sock)) {
             handle_unexpected_response($resp);
         }
 
         if (time() - $poll_target_last > $target_poll_freq) {
+            dwlog("poll device");
             $cmd_ref = get_poll_commands();
             %commands = %$cmd_ref;
+
 
             foreach $id (keys(%commands)) {
                 my $res = execute_command($commands{$id});

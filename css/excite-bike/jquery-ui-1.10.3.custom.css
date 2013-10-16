@@ -232,7 +232,7 @@ button.ui-button-icons-only {
 	line-height: normal;
 }
 .ui-button-text-only .ui-button-text {
-	padding: .4em 1em;
+	padding: .3em .5em;
 }
 .ui-button-icon-only .ui-button-text,
 .ui-button-icons-only .ui-button-text {
@@ -689,7 +689,8 @@ button.ui-button::-moz-focus-inner {
 	margin: .2em 0;
 	vertical-align: middle;
 	margin-left: .4em;
-	margin-right: 22px;
+	margin-right: 12px;
+    width: 50px;
 }
 .ui-spinner-button {
 	width: 16px;
@@ -749,7 +750,7 @@ button.ui-button::-moz-focus-inner {
 }
 .ui-tabs .ui-tabs-nav li a {
 	float: left;
-	padding: .5em 1em;
+	padding: .3em .5em;
 	text-decoration: none;
 }
 .ui-tabs .ui-tabs-nav li.ui-tabs-active {
@@ -768,7 +769,7 @@ button.ui-button::-moz-focus-inner {
 .ui-tabs .ui-tabs-panel {
 	display: block;
 	border-width: 0;
-	padding: 1em 1.4em;
+	padding: .2em .2em;
 	background: none;
 }
 .ui-tooltip {
@@ -790,7 +791,7 @@ body .ui-tooltip {
 	font-size: 1.1em;
 }
 .ui-widget .ui-widget {
-	font-size: 1em;
+	font-size: .95em;
 }
 .ui-widget input,
 .ui-widget select,

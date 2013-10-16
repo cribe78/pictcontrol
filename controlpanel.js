@@ -27,6 +27,7 @@ $( document ).ready(function() {
         activate: function (event, ui) {
             var openIdx = $("#tabsB").tabs("option", "active");
             $("#tabsC").tabs("option", "active", openIdx);
+            $("#tabsE").tabs("option", "active", openIdx);
             //console.log("proj tab " + openIdx + " opened");
         }
     });
@@ -34,11 +35,22 @@ $( document ).ready(function() {
         activate: function (event, ui) {
             var openIdx = $("#tabsC").tabs("option", "active");
             $("#tabsB").tabs("option", "active", openIdx);
+            $("#tabsE").tabs("option", "active", openIdx);
             //console.log("scaler tab " + openIdx + " opened");
         }
     });
 
     $("#tabsD").tabs();
+
+    $("#tabsE").tabs({
+        activate: function (event, ui) {
+            var openIdx = $("#tabsE").tabs("option", "active");
+            $("#tabsB").tabs("option", "active", openIdx);
+            $("#tabsC").tabs("option", "active", openIdx);
+            //console.log("scaler tab " + openIdx + " opened");
+        }
+    });
+
 
     initPControls();
     initSeqEditor();
@@ -76,7 +88,20 @@ function commandSortable(tt, tn, cn, value) {
     return cmdhtml;
 }
 
-
+function executeCommand(tt, tn, ct, cn, value) {
+    $.ajax({
+        url : "/commands.json",
+        type : "POST",
+        dataType : "json",
+        data : {
+            tt : tt,
+            tn : tn,
+            ct : ct,
+            cn : cn,
+            value : value
+        }
+    });
+}
 
 function getCommands() {
     $.ajax({
@@ -125,10 +150,9 @@ function getLogsWait(reqObj, status) {
 }
 
 
-function getPControl(tt, tn, ct, cn) {
+function getPControl(tt, tn, cn) {
     if (tt === undefined || 
         tn === undefined ||
-        ct === undefined ||
         cn === undefined) {
             return null;
     }
@@ -140,7 +164,7 @@ function getPControl(tt, tn, ct, cn) {
         pcontrols[tt][tn] = {};
     }
     if (pcontrols[tt][tn][cn] === undefined) {
-        var newpc = new PControl(tt, tn, ct, cn);
+        var newpc = new PControl(tt, tn, cn);
         pcontrols[tt][tn][cn] = newpc;
     }
 
@@ -149,12 +173,12 @@ function getPControl(tt, tn, ct, cn) {
 
 // Get the PControl object associated with a jQuery object
 function jqGetPControl(jqo) {
-    return getPControl(jqo.data("tt"), jqo.data("tn"), jqo.data("ct"), jqo.data("cn"));
+    return getPControl(jqo.data("tt"), jqo.data("tn"), jqo.data("cn"));
 }
 
 // Get the Pcontrol object associated with a JSON object
 function jsonGetPControl(jo) {
-    return getPControl(jo.tt, jo.tn, jo.ct, jo.cn);
+    return getPControl(jo.tt, jo.tn, jo.cn);
 }
 
 
@@ -356,16 +380,17 @@ function initPControls() {
         var jqo = $(this);
         var pc = jqGetPControl(jqo);
         pc.addJqObject(jqo);
+        var ut = jqo.data("ut");
 
         // Some controls 
 
-        if (jqo.data("ut") == "checkbox") {
+        if (ut == "checkbox") {
             jqo.button();
         }
-        else if (jqo.data("ut") == "slider") {
+        else if (ut == "slider") {
             jqo.slider( {
-                min: jqo.data("min"),
-                max: jqo.data("max"),
+                min: commands[pc.tt][pc.cn].min,
+                max: commands[pc.tt][pc.cn].max,
                 change: function(event, ui) {
                     var jqo = $(this);
                     var pc = jqGetPControl(jqo);
@@ -375,11 +400,35 @@ function initPControls() {
                 }
             });
         }   
-        else if (jqo.data("ut") == "radio") {
+        else if (ut == "radio") {
             jqo.buttonset();
         }
-        else if (jqo.data("ut") == "button") {
+        else if (ut == "button") {
             jqo.button();
+        }
+        else if (ut == "spinner") {
+            var min = commands[pc.tt][pc.cn].min;
+            var max = commands[pc.tt][pc.cn].max;
+
+            jqo.spinner({
+                spin : function (event, ui) {
+                    if (ui.value > max) {
+                        $(this).spinner("value", max);
+                        return false;
+                    }
+                    else if (ui.value < min) {
+                        $(this).spinner("value", min);
+                        return false;
+                    }
+                },
+                change : function (event, ui) {
+                    var jqo = $(this);
+                    var pc = jqGetPControl(jqo);
+                    var val = pctlVal(jqo);
+                    console.log("spinner change called val=" + val);
+                    pc.updateValue(val);
+                }
+            });
         }
     })
     .on("change", function (event, ui) {
@@ -393,28 +442,19 @@ function initPControls() {
         var jqo = $(this);
         var pc = jqGetPControl(jqo);
         if (pc.ct == 'stateless') { 
-            $.ajax({
-                url : "/commands.json",
-                type : "POST",
-                dataType : "json",
-                data : {
-                    tt : pc.tt,
-                    tn : pc.tn,
-                    ct : pc.ct,
-                    cn : pc.cn,
-                    value : jqo.data("value")
-                },
-                success : function(json) {
-                    if (json.status == 1) {
-                        loadJsonControlValues(json);
-                    }   
-                }
-            });
+            executeCommand(pc.tt, pc.tn, pc.ct, pc,cn, jqo.data("value"));
         }
     });
 
     $(".targetrefresh").button().click( function() {
         refreshTarget($(this).data("tt"), $(this).data("tn"));
+    });
+
+    $(".plabel").each( function() {
+        var tt = $(this).data("tt");
+        var cn = $(this).data("cn");
+
+        $(this).text(commands[tt][cn].name);
     });
 
 }
@@ -519,25 +559,33 @@ function pctlVal(jqo) {
             }
         }
     }
+    else if (type == "spinner") {
+        return jqo.spinner("value");
+    }
 }
 
-function PControl(tt, tn, ct, cn) {
+function PControl(tt, tn, cn) {
     if (tt === undefined ||
         tn === undefined ||
-        ct === undefined ||
         cn === undefined) {
         console.log("pcontrol init: undefined value");
         return null;
     }
 
+    if (typeof commands[tt][cn] == "undefined") {
+        console.log("undefined command " + tt + ":" + cn);
+        return null;
+    }
+
+
     this.tt = tt;
     this.tn = tn;
-    this.ct = ct;
+    this.ct = commands[tt][cn].type;
     this.cn = cn;
     this.value = null;
     this.jqObjects = [];
     console.log("pcontrol init: tt=" + tt + " ,tn=" + tn + ", ct=" 
-                + ct + ", cn=" + cn);
+                + this.ct + ", cn=" + cn);
 }
 
 
@@ -553,13 +601,21 @@ PControl.prototype.setValue = function(val) {
     if (val === null) 
         return;
 
-    console.log("PControl.setValue " + val); 
+    //console.log("PControl.setValue " + val); 
     this.value = val;
 
     for (var ctlIdx in this.jqObjects) {
-        console.log("PControl.setValue, object " + ctlIdx);
+        //console.log("PControl.setValue, object " + ctlIdx);
         var ctl = this.jqObjects[ctlIdx];
         setJQCtlValue(ctl, val);       
+    }
+
+    // Keep polling the server if this is a projector that is warming up 
+    if (this.tt == "proj" && this.cn == "POST"
+        && (val == 2 || val == 4)) {
+        executeCommand(this.tt, this.tn, "query", "POST", "?");
+        executeCommand(this.tt, this.tn, "query", "LST1", "?");
+        executeCommand(this.tt, this.tn, "query", "LST2", "?");
     }
 }
 
@@ -591,20 +647,25 @@ function selectOption(value, label) {
 }
 
 function setJQCtlValue(ctl, val) {
-    if (ctl.data("ut") === "checkbox") {
+    var ut = ctl.data("ut");
+
+    if (ut === "checkbox") {
         var checked = (val == 1);
         if (checked != ctl.prop("checked")) {
             ctl.prop("checked", checked).button("refresh");
         }
     }
-    else if (ctl.data("ut") === "slider") {
+    else if (ut === "slider") {
         if (ctl.slider("value") != val &&
             ctl.slider("option", "max") >= val &&
             ctl.slider("option", "min") <= val) {
             ctl.slider("value", val);
         }
     }
-    else if (ctl.data("ut") === "radio") {
+    else if ( ut == "spinner") {
+        ctl.spinner("value", val);
+    }
+    else if ( ut === "radio") {
         // Select the correct option
         ctl.find("input").each( function() {
             if ($(this).data("value") == val) {
@@ -619,8 +680,19 @@ function setJQCtlValue(ctl, val) {
             }   
         });
     }
-    else if (ctl.data("ut") === "display") {
-        ctl.text(val);
+    else if ( ut === "display") {
+        var tt = ctl.data("tt");
+        var cn = ctl.data("cn");
+        var valDisp = val;
+
+        if ( typeof commands[tt][cn] == "undefined") {
+            console.log("warning: undefined command: " + tt + ":" + cn);
+        }
+        else if ( commands[tt][cn].type == "select") {
+            valDisp = commands[tt][cn].values[val];
+        }
+
+        ctl.text(valDisp);
     }
 }
     
@@ -645,23 +717,7 @@ PControl.prototype.toArray = function() {
 PControl.prototype.updateValue = function(val) {
     if (val != this.value) {
         var pctl = this;
-        $.ajax( {
-            url : "/commands.json",
-            type : "POST",
-            dataType : "json",
-            data : {
-                ct : this.ct,
-                tt : this.tt,
-                tn : this.tn,
-                cn : this.cn,
-                value : val
-            },
-            success : function(json) {
-                if (json.status == 1) {
-                    loadJsonControlValues(json);
-                }   
-            }
-        });      
+        executeCommand(this.tt, this.tn, this.ct, this.cn, val);
     }
     else {
         console.log("updateValue: no change, " + this.toString());

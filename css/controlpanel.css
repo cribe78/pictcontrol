@@ -1,3 +1,4 @@
+
 .keystonediv {
 }
 
@@ -47,6 +48,10 @@
 .swtoolbarlabel {
     display: inline-block;
     width: 80px;
+}
+
+#tabsA {
+    width : 800px;
 }
 
 .tbicon {

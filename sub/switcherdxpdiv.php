@@ -13,7 +13,7 @@ for ($i = 1; $i <= 8; $i++) {
     <div class="ui-widget-toolbar ui-corner-all">
     <div class='swtoolbarlabel'><?=$out_labels[$i]?></div>
     <span id="<?=$input_id?>" class="pcontrol"  
-        data-ct='range' data-ut='radio' data-cn='Out<?=$i?>Vid' data-tt='switcher-dxp' data-tn='1'>
+          data-ut='radio' data-cn='Out<?=$i?>Vid' data-tt='switcher-dxp' data-tn='1'>
 <?
     for ($j = 1; $j <= 8; $j++) {
         radioHTML($input_id, $j, $in_labels[$j]);
@@ -36,7 +36,7 @@ for ($i = 1; $i <= 8; $i++) {
 ?>
     <div class="ui-widget-toolbar ui-corner-all">
     <span id="<?=$input_id?>" class="pcontrol"  
-        data-ct='range' data-ut='radio' data-cn='Out<?=$i?>Aud' data-tt='switcher-dxp' data-tn='1'>
+          data-ut='radio' data-cn='Out<?=$i?>Aud' data-tt='switcher-dxp' data-tn='1'>
 <?
     for ($j = 1; $j <= 8; $j++) {
         radioHTML($input_id, $j, $in_labels[$j]);
