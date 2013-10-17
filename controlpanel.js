@@ -6,6 +6,8 @@ var cmd_idx = 0;
 var id_idx = 1;
 var sequences = {};
 
+var startD = new Date();
+var startTime = startD.getTime();
 
 // Pict button
 // - button types:
@@ -371,66 +373,67 @@ function initSeqEditor() {
     });
 }
 
+function initJQCtl() {
+    var jqo = $(this);
+    var pc = jqGetPControl(jqo);
+    pc.addJqObject(jqo);
+    var ut = jqo.data("ut");
+
+    // Some controls 
+
+    if (ut == "checkbox") {
+        jqo.button();
+    }
+    else if (ut == "slider") {
+        jqo.slider( {
+            min: commands[pc.tt][pc.cn].min,
+            max: commands[pc.tt][pc.cn].max,
+            change: function(event, ui) {
+                var jqo = $(this);
+                var pc = jqGetPControl(jqo);
+                var val = ui.value;
+                console.log("slider change, value: " + val);
+                pc.updateValue(val);
+            }
+        });
+    }   
+    else if (ut == "radio") {
+        jqo.buttonset();
+    }
+    else if (ut == "button") {
+        jqo.button();
+    }
+    else if (ut == "spinner") {
+        var min = commands[pc.tt][pc.cn].min;
+        var max = commands[pc.tt][pc.cn].max;
+
+        jqo.spinner({
+            spin : function (event, ui) {
+                if (ui.value > max) {
+                    $(this).spinner("value", max);
+                    return false;
+                }
+                else if (ui.value < min) {
+                    $(this).spinner("value", min);
+                    return false;
+                }
+            },
+            change : function (event, ui) {
+                var jqo = $(this);
+                var pc = jqGetPControl(jqo);
+                var val = pctlVal(jqo);
+                console.log("spinner change called val=" + val);
+                pc.updateValue(val);
+            }
+        });
+    }
+}
 
 
 function initPControls() {
     // Go through all of the input elements in the document and build 
     // the PControl objects
-    $(".pcontrol").each(function() {
-        var jqo = $(this);
-        var pc = jqGetPControl(jqo);
-        pc.addJqObject(jqo);
-        var ut = jqo.data("ut");
-
-        // Some controls 
-
-        if (ut == "checkbox") {
-            jqo.button();
-        }
-        else if (ut == "slider") {
-            jqo.slider( {
-                min: commands[pc.tt][pc.cn].min,
-                max: commands[pc.tt][pc.cn].max,
-                change: function(event, ui) {
-                    var jqo = $(this);
-                    var pc = jqGetPControl(jqo);
-                    var val = ui.value;
-                    console.log("slider change, value: " + val);
-                    pc.updateValue(val);
-                }
-            });
-        }   
-        else if (ut == "radio") {
-            jqo.buttonset();
-        }
-        else if (ut == "button") {
-            jqo.button();
-        }
-        else if (ut == "spinner") {
-            var min = commands[pc.tt][pc.cn].min;
-            var max = commands[pc.tt][pc.cn].max;
-
-            jqo.spinner({
-                spin : function (event, ui) {
-                    if (ui.value > max) {
-                        $(this).spinner("value", max);
-                        return false;
-                    }
-                    else if (ui.value < min) {
-                        $(this).spinner("value", min);
-                        return false;
-                    }
-                },
-                change : function (event, ui) {
-                    var jqo = $(this);
-                    var pc = jqGetPControl(jqo);
-                    var val = pctlVal(jqo);
-                    console.log("spinner change called val=" + val);
-                    pc.updateValue(val);
-                }
-            });
-        }
-    })
+    $(".pcontrol").each(initJQCtl)  
     .on("change", function (event, ui) {
         var jqo = $(this);
         var pc = jqGetPControl(jqo);
@@ -562,6 +565,10 @@ function pctlVal(jqo) {
     else if (type == "spinner") {
         return jqo.spinner("value");
     }
+    else if (type == "number") {
+        return jqo.val();
+    }
+
 }
 
 function PControl(tt, tn, cn) {
@@ -584,7 +591,7 @@ function PControl(tt, tn, cn) {
     this.cn = cn;
     this.value = null;
     this.jqObjects = [];
-    console.log("pcontrol init: tt=" + tt + " ,tn=" + tn + ", ct=" 
+    tslog("pcontrol init: tt=" + tt + " ,tn=" + tn + ", ct=" 
                 + this.ct + ", cn=" + cn);
 }
 
@@ -665,6 +672,9 @@ function setJQCtlValue(ctl, val) {
     else if ( ut == "spinner") {
         ctl.spinner("value", val);
     }
+    else if ( ut == "number") {
+        ctl.val(val);
+    }
     else if ( ut === "radio") {
         // Select the correct option
         ctl.find("input").each( function() {
@@ -697,6 +707,11 @@ function setJQCtlValue(ctl, val) {
 }
     
 
+function tslog(message) {
+    var d = new Date();
+    var elapsed = d.getTime() - startTime;
+    console.log(elapsed + ": " + message);
+}
 
 PControl.prototype.toString = function() {
     var str = "tt=" + this.tt + ", tn=" + this.tn + ", ct=" + this.ct
@@ -720,7 +735,7 @@ PControl.prototype.updateValue = function(val) {
         executeCommand(this.tt, this.tn, this.ct, this.cn, val);
     }
     else {
-        console.log("updateValue: no change, " + this.toString());
+        tslog("updateValue: no change, " + this.toString());
     }
 }
 

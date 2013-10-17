@@ -1,15 +1,42 @@
+.edgebottom {
+    position : relative;
+    left : 189px;
+}
+
+.edgeleft {
+    position : relative;
+    display: inline-block;
+    top : 12px;
+
+}
+
+.edgeright {
+    position : relative;
+    display: inline-block;
+    top : 12px;
+}
+
+.edgetop {
+    position : relative;
+    display: inline-block;
+}
+
+.inline-div {
+    display: inline-block;
+}
+
 
 .keystonediv {
 }
 
 .keystonedivleft {
     display: inline-block;
-    width: 380px;
+    width: 300px;
 }
 
 .keystonedivright {
     display: inline-block;
-    width: 380px;
+    width: 300px;
 }
 
 .keystoneslider {
@@ -17,9 +44,56 @@
     margin: 12px;
 }
 
+
+.kblh {
+}
+
+.kblv { 
+    position : relative;
+    left : 70px;
+}
+
+.kbrh {
+    position : relative;
+    left : 70px;
+}
+
+.kbrv {
+}
+
+
+.ktlh {
+}
+
+.ktlv { 
+    position : relative;
+    left : 70px;
+}
+
+.ktrh {
+    position : relative;
+    left : 70px;
+}
+
+.ktrv {
+
+}
+
+
+
+
 .matrixcontrol {
     display: inline-block;
 }
+
+.numberctl {
+    padding-right: 20px;
+}
+
+.numberrange {
+    font-size : .6em;
+}
+
 
 .picttb {
     padding: 4px;

@@ -44,25 +44,6 @@ $id_idx = 1;
 
 $log = array();
 
-function addCommand($tt, $tn, $ct, $cn, $val) {
-    global $mysqli;
-    $add_command = $mysqli->prepare(
-        "insert ignore into commands
-            (target_type, target_num, command_type, command_name, value)
-            value (?, ?, ?, ?, ?)");
-
-    if (! $add_command) {
-        pclog("prepare add_command error: {$mysqli->error}");
-        return;
-    }
-
-    $add_command->bind_param('sssss', $tt, $tn, $ct, $cn, $val);
-
-    if (! $add_command->execute()) {
-        pclog("add_command execute failed: {$mysqli->error}");
-    }
-}
-
 
 function alertControlDaemon($tt, $tn, $token = "POLL") {
     // Send a UDP message to a control daemon, alerting it to 
@@ -233,7 +214,20 @@ function launchControlDaemon($tt, $tn) {
     }
 }
 
+function numberControl($tt, $tn, $cn, $classes = "") {
+    global $commands;
+    $cmd = $commands[$tt][$cn];
 
+    echo("<div class='numberctl $classes'>"); 
+    echo("<span class='numberlabel'>{$cmd['name']}</span>");
+    echo("<input type='number' class='pcontrol' data-tt='$tt'
+            data-tn='$tn' data-cn='$cn' data-ut='number'
+            min='{$cmd['min']}'  max='{$cmd['max']}' />");
+    echo("<span class='numberrange'>({$cmd['min']} - {$cmd['max']})</span>");
+    echo("</div>");
+    
+
+}
 
 $insert_log = '';
 
@@ -264,8 +258,6 @@ function pclog($msg) {
     
 
 function setPControl($tt, $tn, $ct, $cn, $value) {
-    addCommand($tt, $tn, $ct, $cn, $value);
-    
     if ($tt == 'proj' || 
         $tt == 'audio-onkyo' ||
         $tt == 'switcher-dxp' ||
@@ -279,7 +271,6 @@ function setPControl($tt, $tn, $ct, $cn, $value) {
     else {
         pclog("setPControl: unhandled tt: $tt");
     }
-
 }
 
 function queueCommand($tt, $tn, $ct, $cn, $value) {
@@ -329,6 +320,7 @@ function radioHTML($set_id, $value, $label) {
                 <label for='$id'>$label</label>");
 
 }
+
 
 
 function sliderCombo($tt, $tn, $cn) {

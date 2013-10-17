@@ -121,49 +121,49 @@ $commands = array(
             )
         ),
         'FAA' => array(
-            'name' => "Keystone TL-H",
+            'name' => "TL-H",
             'type' => "range",
             'min' => 0,
             'max' => 650
         ),
         'FAB' => array(
-            'name' => "Keystone TL-V",
+            'name' => "TL-V",
             'type' => "range",
             'min' => 0,
             'max' => 650
         ),
         'FAC' => array(
-            'name' => "Keystone BL-H",
+            'name' => "BL-H",
             'type' => "range",
             'min' => 0,
             'max' => 650
         ),
         'FAD' => array(
-            'name' => "Keystone BL-V",
+            'name' => "BL-V",
             'type' => "range",
             'min' => -650,
             'max' => 0
         ),
         'FAE' => array(
-            'name' => "Keystone TR-H",
+            'name' => "TR-H",
             'type' => "range",
             'min' => -650,
             'max' => 0
         ),
         'FAF' => array(
-            'name' => "Keystone TR-V",
+            'name' => "TR-V",
             'type' => "range",
             'min' => 0,
             'max' => 650
         ),
         'FAG' => array(
-            'name' => "Keystone BR-H",
+            'name' => "BR-H",
             'type' => "range",
             'min' => -650,
             'max' => 0
         ),
         'FAH' => array(
-            'name' => "Keystone BR-V",
+            'name' => "BR-V",
             'type' => "range",
             'min' => -650,
             'max' => 0
@@ -177,8 +177,8 @@ $commands = array(
         'ACB' => array(
             'name' => "Horizontal Pos.",
             'type' => "range",
-            'min' => -1,
-            'max' => 400
+            'min' => -1280,
+            'max' => 1280
         ),
         'FFA' => array(
             'name' => "Edge Blend Bottom On/Off",
@@ -197,25 +197,25 @@ $commands = array(
             'type' => "boolean"
         ),
         'FFE' => array(
-            'name' => "Edge Blend Bottom Size",
+            'name' => "Size",
             'type' => "range",
             'min' => 0,
             'max' => 511
         ),
         'FFF' => array(
-            'name' => "Edge Blend Left Size",
+            'name' => "Size",
             'type' => "range",
             'min' => 0,
             'max' => 511
         ),
         'FFG' => array(
-            'name' => "Edge Blend Right Size",
+            'name' => "Size",
             'type' => "range",
             'min' => 0,
             'max' => 511
         ),
         'FFH' => array(
-            'name' => "Edge Blend Top Size",
+            'name' => "Size",
             'type' => "range",
             'min' => 0,
             'max' => 511

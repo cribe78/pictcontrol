@@ -147,9 +147,9 @@ $lmod_id = getID();
    <div class='ui-widget-header ui-corner-all'>Picture Controls</div>
     
 <?
-    sliderCombo("proj", $p, "BRIG");
-    sliderCombo("proj", $p, "CNTR");
-    sliderCombo("proj", $p, "SHRP");
+    numberControl("proj", $p, "BRIG", "inline-div");
+    numberControl("proj", $p, "CNTR", "inline-div");
+    numberControl("proj", $p, "SHRP", "inline-div");
 
 ?>
 </div>

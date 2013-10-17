@@ -43,27 +43,20 @@ radioBar("scaler", $p, "FA");
     <div class='keystonesliderdiv'>
     <div class='keystonedivleft'>
 <?
-        foreach (array_keys($keystone_sliders) as $ks) {
-            $label = $keystone_sliders[$ks]['label'];
-            $id = getID();
-            $min = $keystone_sliders[$ks]['min'];
-            $max = $keystone_sliders[$ks]['max'];
-
-            if ($ks == "E") {
-                echo("</div><div class='keystonedivright'>");
-            }
+    numberControl('scaler', $p, 'FAB', "ktlv");
+    numberControl('scaler', $p, 'FAA', "ktlh");
+    numberControl('scaler', $p, 'FAC', "kblh");
+    numberControl('scaler', $p, 'FAD', "kblv");
 ?>
-    <span><?=$label?>:</span>
-        <span class="pcontrol"  data-tt='scaler' data-tn='<?=$p?>'  
-        data-ut='display'   data-cn='FA<?=$ks?>'></span> 
-    <div id='<?=$id?>' class="scaler<?=$p?> keystoneslider pcontrol" 
-        data-tt='scaler' data-tn='<?=$p?>'  data-ut='slider'   data-cn='FA<?=$ks?>'
-        data-min='<?=$min?>' data-max='<?=$max?>'> 
-    
     </div>
+    <div class='keystonedivright'>
 <?
-        }
+    numberControl('scaler', $p, 'FAF', "ktrv");
+    numberControl('scaler', $p, 'FAE', "ktrh");
+    numberControl('scaler', $p, 'FAG', "kbrh");
+    numberControl('scaler', $p, 'FAH', "kbrv");
 ?>
+
     </div>
     </div>
 </div>
@@ -72,8 +65,8 @@ radioBar("scaler", $p, "FA");
 <div class="sposition ui-widget-content" >
     <div class="spositionheader ui-widget-header ui-corner-all">Position Controls</div>
 <?    
-    sliderCombo("scaler", $p, "ACA");  
-    sliderCombo("scaler", $p, "ACB");
+    numberControl("scaler", $p, "ACA", "inline-div");  
+    numberControl("scaler", $p, "ACB", "inline-div");
 ?>  
 </div>
 <?
@@ -85,35 +78,30 @@ radioBar("scaler", $p, "FA");
 
 <div class="sedges ui-widget-content">
     <div class="sedgesheader ui-widget-header ui-corner-all">Edge Blending</div>
-    <input type='checkbox' data-ut='checkbox' data-tt='scaler' data-tn='<?=$p?>'
-      data-cn='FFD' id='<?=$top_id?>' class='pcontrol' />
-    <label for='<?=$top_id?>'>Top</label> 
-    <span class="pcontrol"  data-tt='scaler' data-tn='<?=$p?>'  
-        data-ut='display'   data-cn='FFH'></span> 
-    <div class="scaler<?=$p?> edgeslider pcontrol" 
-        data-tt='scaler' data-tn='<?=$p?>'  data-ut='slider'   data-cn='FFH'> </div>
-    <input type='checkbox' data-ut='checkbox' data-tt='scaler' data-tn='<?=$p?>'
-      data-cn='FFA' id='<?=$bottom_id?>' class='pcontrol' />
-    <label for='<?=$bottom_id?>'>Bottom</label> 
-    <span class="pcontrol"  data-tt='scaler' data-tn='<?=$p?>'  
-        data-ut='display'   data-cn='FFE'></span> 
-    <div class="scaler<?=$p?> edgeslider pcontrol" 
-        data-tt='scaler' data-tn='<?=$p?>'  data-ut='slider'   data-cn='FFE'> </div>
-    <input type='checkbox' data-ut='checkbox' data-tt='scaler' data-tn='<?=$p?>'
-      data-cn='FFB' id='<?=$left_id?>' class='pcontrol' />
-    <label for='<?=$left_id?>'>Left</label> 
-    <span class="pcontrol"  data-tt='scaler' data-tn='<?=$p?>'  
-        data-ut='display'   data-cn='FFF'></span> 
-    <div class="scaler<?=$p?> edgeslider pcontrol" 
-        data-tt='scaler' data-tn='<?=$p?>'  data-ut='slider'   data-cn='FFF'> </div>
-    <input type='checkbox' data-ut='checkbox' data-tt='scaler' data-tn='<?=$p?>'
-      data-cn='FFC' id='<?=$right_id?>' class='pcontrol' />
-    <label for='<?=$right_id?>'>Right</label> 
-    <span class="pcontrol"  data-tt='scaler' data-tn='<?=$p?>'  
-        data-ut='display'   data-cn='FFG'></span> 
-    <div class="scaler<?=$p?> edgeslider pcontrol" 
-        data-tt='scaler' data-tn='<?=$p?>'  data-ut='slider'   data-cn='FFG'
-           > </div>
+    <div class='edgeleft'>
+        <input type='checkbox' data-ut='checkbox' data-tt='scaler' data-tn='<?=$p?>'
+          data-cn='FFB' id='<?=$left_id?>' class='pcontrol' />
+        <label for='<?=$left_id?>'>Left</label> 
+        <?  numberControl("scaler", $p, "FFF", "inline-div"); ?> 
+    </div>
+    <div class='edgetop'>
+        <input type='checkbox' data-ut='checkbox' data-tt='scaler' data-tn='<?=$p?>'
+          data-cn='FFD' id='<?=$top_id?>' class='pcontrol' />
+        <label for='<?=$top_id?>'>Top</label> 
+        <?  numberControl("scaler", $p, "FFH", "inline-div"); ?>  
+    </div>      
+    <div class='edgeright'>    
+        <input type='checkbox' data-ut='checkbox' data-tt='scaler' data-tn='<?=$p?>'
+          data-cn='FFC' id='<?=$right_id?>' class='pcontrol' />
+        <label for='<?=$right_id?>'>Right</label> 
+        <?  numberControl("scaler", $p, "FFG", "inline-div"); ?> 
+    </div>    
+    <div class='edgebottom'>
+        <input type='checkbox' data-ut='checkbox' data-tt='scaler' data-tn='<?=$p?>'
+          data-cn='FFA' id='<?=$bottom_id?>' class='pcontrol' />
+        <label for='<?=$bottom_id?>'>Bottom</label>
+        <?  numberControl("scaler", $p, "FFE", "inline-div"); ?>
+    </div>        
 </div>
 <div id='s<?=$p?>sourcetb' class="scaler<?=$p?> ui-widget-header">
     <span>Input Res:</span>    
