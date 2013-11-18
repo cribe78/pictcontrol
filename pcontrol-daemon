@@ -179,7 +179,8 @@ sub device_connect {
                 Blocking => 0,
                 Timeout => 5);
     if (! $sock) { 
-        syslog("err", "could not open socket to device");
+        dwlog("could not open socket to device");
+        return 0;
     }
 
     dwlog("connected to $device_ip:$device_port, proto $proto");
