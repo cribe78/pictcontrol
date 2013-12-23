@@ -106,6 +106,12 @@ elseif ($_SERVER['REQUEST_METHOD'] == 'POST') {
         jsonResponse();
     }
 
+    if (! isset($sequence['commands'])) {
+        $resp['sequence'] = $sequence;
+        $resp['status'] = 1;
+        jsonResponse();
+    }
+
     $clear_seq = $mysqli->prepare(
         "delete from sequence_commands where sequence_id = ?");
 

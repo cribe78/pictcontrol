@@ -10,11 +10,17 @@
 
         </select>
         <button id=seqexecute>Execute</button>
+        <button id=seqrename>Rename</button>
     </div>
     <div id=newseqadddiv>
         <input id=newseq value="Name"/>
         <button id=newseqadd>Add</button>
         <button id=newseqcancel>Cancel</button>
+    </div>
+    <div id=seqrenamediv>
+        <input id=seqrenamename value="Name"/>
+        <button id=seqrenameupdate>Update</button>
+        <button id=seqrenamecancel>Cancel</button>
     </div>
 </div>
 <div id="seqeditbody">

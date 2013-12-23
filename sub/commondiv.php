@@ -23,3 +23,7 @@ foreach ($screen_list as $p) {
     <span class="pcontrol"  data-tt='audio-onkyo' data-tn='1'  
         data-ut='display' data-ct='range' data-cn='MVL'></span> 
 </div>
+<button class="pseq" data-id="5" />Seq. 5</button>
+<button class="pseq" data-id="6" />Seq. 6</button>
+<button class="pseq" data-id="7" />Seq. 7</button>
+<button class="pseq" data-id="8" />Seq. 8</button>

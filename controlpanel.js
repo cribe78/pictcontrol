@@ -233,6 +233,7 @@ function initSeqEditor() {
 
     });
 
+    $("#seqrenamediv").hide();
     $("#newseqadddiv").hide();
     $("#newcommandrangevalue").hide();
 
@@ -287,6 +288,46 @@ function initSeqEditor() {
         });
     });
 
+
+    $('#seqrename').button()
+    .click( function() {
+        $("#seqrenamename").val($("#seqs option:selected").text());
+        $("#seqselectdiv").hide();
+        $("#seqrenamediv").show();
+    });
+
+    $("#seqrenameupdate").button()
+    .click( function() {
+        var name = $("#seqrenamename").val();
+        var seq_id = $("#seqs").val();
+
+        $.ajax({
+            url : "/sequences.json",
+            type : "POST",
+            dataType : "json",
+            data : {
+                sequence : { 
+                    seq_id : seq_id, 
+                    name : name 
+                }
+            },
+            success : function(json) {
+                if (json.status == 1) {
+                    $("#seqs option:selected").text(json.sequence.name);
+                    $("#seqrenamediv").hide();
+                    $("#seqselectdiv").show();
+
+                    console.log("sequence renamed");
+                }
+            }
+        }); 
+    });
+
+    $("#seqrenamecancel").button()
+    .click( function() {
+        $("#seqrenamediv").hide();
+        $("#seqselectdiv").show();
+    });
 
 
     $("#seqs").change( function() {
