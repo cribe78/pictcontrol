@@ -7,6 +7,10 @@ require("sub/head.php");
 
 ?>
 
+<body>
+<div id=loadingImg>
+    <span id=loadingText>Initializing...</span>
+</div>
 <div id="tabsA">
     <ul id="tablistA">
         <li><a href="#tabsA-1">Basic</a></li>
@@ -104,4 +108,7 @@ require("sub/head.php");
     <div id="tabsA-7">
 <?      include("sub/admindiv.php");   ?>
     </div>
+</div>
+</body>
+
 

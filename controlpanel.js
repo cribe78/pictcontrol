@@ -58,6 +58,9 @@ $( document ).ready(function() {
     initSeqEditor();
     getLogs();
     getCommands();
+
+    $("#loadingImg").hide("fade");
+
 });
 
 

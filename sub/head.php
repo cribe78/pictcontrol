@@ -44,7 +44,7 @@ if ($ctx == "html") {
 }
 if ($ctx === "json") {
     // Define the $resp global array
-    $resp = array("status" => 0);
+    $resp = array("status" => 0);  
 }
 
 ?>
