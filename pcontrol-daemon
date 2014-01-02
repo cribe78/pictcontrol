@@ -48,7 +48,7 @@ openlog("pcontrol-daemon","pid","local2");
 
 # Print a log message before exiting on SIGTERM
 $SIG{TERM} = sub {
-    syslog("err", "received SIGTERM.  exiting");
+    dwlog("received SIGTERM.  exiting");
     exit();
 };
 
@@ -270,22 +270,43 @@ sub dwlog {
 
 
 sub execute_command {
+    my $res = 0;
+    state $last_success = time();
+    my $alert_thresh = $target_poll_freq * 2;
+
     if ($proto eq "dxp") {
-        return execute_command_dxp(@_);
+        $res = execute_command_dxp(@_);
     }
     elsif ($proto eq "iscp") {
-        return execute_command_iscp(@_);
+        $res = execute_command_iscp(@_);
     }
     elsif ($proto eq "f32") {
-        return execute_command_f32(@_);
+        $res =  execute_command_f32(@_);
     }
     elsif ($proto eq "ia200") {
-        return execute_command_ia200(@_);
+        $res = execute_command_ia200(@_);
     }
     else {
         dwlog("command protocol not implemented: $proto");
         return 0;
     }
+
+    if ($res == 1) {
+        $last_success = time();
+    }
+    elsif (time() - $last_success > $alert_thresh) {
+        # It has been more than alert_thresh seconds since 
+        # we last successfully communicated with the device.
+        # Close the connection and reconnect.
+
+        my $elapsed = time() - $last_success;
+        dwlog("{$elapsed}s since last device communication.  resetting...");
+        $sock->close();
+        $sock = device_connect();
+    }
+
+
+    return $res;
 }
 
 sub execute_command_dxp {

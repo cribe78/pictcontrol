@@ -70,7 +70,7 @@ function alertControlDaemon($tt, $tn, $token = "POLL") {
         $select_daemon->bind_param('si', $tt, $tn);
 
         if (! $select_daemon->execute()) {
-            pclog("error selecting control daemon: {$select_daemon->error}");
+            pclog("$tt:$tn error selecting control daemon: {$select_daemon->error}");
             return;
         }
 
@@ -78,14 +78,14 @@ function alertControlDaemon($tt, $tn, $token = "POLL") {
         $select_daemon->store_result();
         if ($select_daemon->fetch()) {
             if ( $port == 0 ) {
-                pclog("daemon still starting... waiting");
+                pclog("$tt:$tn daemon still starting... waiting");
                 usleep(500000);
                 continue;
             }
 
             $fp = stream_socket_client("udp://127.0.0.1:$port", $errno, $errstr);
             if (! $fp) {
-                pclog("could not connect to control daemon ($tt/$tn/$port)");
+                pclog("$tt:$tn could not connect to control daemon at port $port)");
                 launchControlDaemon($tt, $tn);
                 return;
             }    
@@ -100,7 +100,7 @@ function alertControlDaemon($tt, $tn, $token = "POLL") {
                 //pclog("ACK received from control daemon");
                 return;
             }
-            pclog("NO ACK received from $tt:$tn (pid $pid)");
+            pclog("$tt:$tn NO ACK received (pid $pid)");
 
             if ($loopcount == 5) {
                 pclog("killing process $pid");
@@ -108,7 +108,7 @@ function alertControlDaemon($tt, $tn, $token = "POLL") {
             }
         }
         else {
-            pclog("alertControlDaemon: no daemon registered");
+            pclog("$tt:$tn alertControlDaemon: no daemon registered");
         }
     }
     
@@ -171,13 +171,13 @@ function launchControlDaemon($tt, $tn) {
             and target_num = ?");
     
     if (! $delete_daemon) {
-        pclog("delete_daemon prepare error: {$mysqli->error}");
+        pclog("$tt:$tn delete_daemon prepare error: {$mysqli->error}");
         return;
     }
 
     $delete_daemon->bind_param('si', $tt, $tn);
     if (! $delete_daemon->execute()) {
-        pclog("delete_daemon execute error: {$delete_daemon->error}");
+        pclog("$tt:$tn delete_daemon execute error: {$delete_daemon->error}");
         return;
     }
     else {
@@ -208,9 +208,9 @@ function launchControlDaemon($tt, $tn) {
 
         $exec_str = "./pcontrol-daemon --tt=$tt --tn=$tn "
                 . " --address=$ip --port=$port";
-        pclog("launching pcontrol-daemon: $exec_str");
+        pclog("$tt:$tn launching pcontrol-daemon: $exec_str");
         exec($exec_str);
-        pclog("daemon launched");        
+        pclog("$tt:$tn daemon launched");        
     }
 }
 
