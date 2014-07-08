@@ -19,26 +19,33 @@ $screen_icons = array( 1 => "screen1.png",
                        3 => "screen3.png",
                        4 => "screen4.png",
                        5 => "screen5.png");
-$projector_ip = array( 1 => "192.168.1.100",
-                       2 => "192.168.1.101",
-                       3 => "192.168.1.102",
-                       4 => "192.168.1.103",
-                       5 => "192.168.1.104");
-$projector_port = 1025;
 
+$target_ports = array();
+$target_ports['proj']['ip'] = array( 1 => "192.168.1.100",
+                                2 => "192.168.1.101",
+                                3 => "192.168.1.102",
+                                4 => "192.168.1.103",
+                                5 => "192.168.1.104");
+$target_ports['proj']['port'] = array( 1 => 1025 );
 
-$scaler_ip = array(    1 => "192.168.1.200",
-                       2 => "192.168.1.201",
-                       3 => "192.168.1.202",
-                       4 => "192.168.1.203",
-                       5 => "192.168.1.204");
-$scaler_port = 30001;
+$target_ports['proj-benq']['ip'] = array( 1 => "10.5.162.225");
+$target_ports['proj-benq']['port'] = array( 1 => 28841,
+                                            2 => 28842,
+                                            3 => 28843);
 
-$audio_onkyo_ip = "10.5.162.232";
-$audio_onkyo_port = 4001;
+$target_ports['scaler']['ip'] = array(    1 => "192.168.1.200",
+                                        2 => "192.168.1.201",
+                                        3 => "192.168.1.202",
+                                        4 => "192.168.1.203",
+                                        5 => "192.168.1.204");
+$target_ports['scaler']['port'] = 30001;
 
-$switcher_dxp_ip = "10.5.162.202";
-$switcher_dxp_port = "23";
+$target_ports['switcher-dxp']['ip'] = array( 1 => "10.5.162.202",
+                                             2 => "10.5.162.220");
+$target_ports['switcher-dxp']['port'] = array( 1 => 23);
+
+$target_ports['audio-onkyo']['ip'] = array( 1 => "10.5.162.232");
+$target_ports['audio-onkyo']['port'] = array( 1 => 4001);
 
 $id_idx = 1;
 
@@ -122,7 +129,7 @@ function getCmdIdx() {
         "insert into cmd_idxs () values ()");
 
     if (! $add_idx->execute()) {
-        dwlog("insert cmd_idx error: $DBI::errstr");
+        dwlog("insert cmd_idx error: $add_idx->error");
         return 0;
     }
 
@@ -155,14 +162,7 @@ function jsonResponse($response = "") {
 
 function launchControlDaemon($tt, $tn) {
     global $mysqli;
-    global $audio_onkyo_ip;
-    global $audio_onkyo_port;
-    global $switcher_dxp_ip;
-    global $switcher_dxp_port;
-    global $projector_ip;
-    global $projector_port;
-    global $scaler_ip;
-    global $scaler_port;
+    global $target_ports;
 
 
     $delete_daemon = $mysqli->prepare(
@@ -184,33 +184,28 @@ function launchControlDaemon($tt, $tn) {
         //pclog("killing running pcontrol-daemon processes");
         // exec("killall pcontrol-daemon");
     }
-    
-    if (preg_match("/proj|scaler|switcher-dxp|audio-onkyo/", $tt) &&
-            preg_match("/\d/", $tn)) {
-        $ip = "";
-        $port = "";
-        if ($tt == "audio-onkyo") {
-            $ip = $audio_onkyo_ip;
-            $port = $audio_onkyo_port;
+
+    if (isset($target_ports[$tt])) {
+        if (isset($target_ports[$tt]['ip'][$tn])) {
+            $ip = $target_ports[$tt]['ip'][$tn];
         }
-        elseif ($tt == "switcher-dxp") {
-            $ip = $switcher_dxp_ip;
-            $port = $switcher_dxp_port;
-        }
-        elseif ($tt == "proj") {
-            $ip = $projector_ip[$tn];
-            $port = $projector_port;
-        }
-        elseif ($tt == "scaler") {
-            $ip = $scaler_ip[$tn];
-            $port = $scaler_port;
+        else {
+            $ip = $target_ports[$tt]['ip'][1];
         }
 
+        if (isset($target_ports[$tt]['port'][$tn])) {
+            $port = $target_ports[$tt]['port'][$tn];
+        }
+        else {
+            $port = $target_ports[$tt]['port'][1];
+        }
+
+
         $exec_str = "./pcontrol-daemon --tt=$tt --tn=$tn "
-                . " --address=$ip --port=$port";
+            . " --address=$ip --port=$port";
         pclog("$tt:$tn launching pcontrol-daemon: $exec_str");
         exec($exec_str);
-        pclog("$tt:$tn daemon launched");        
+        pclog("$tt:$tn daemon launched");
     }
 }
 

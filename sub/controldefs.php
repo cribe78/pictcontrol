@@ -602,8 +602,14 @@ $commands = array(
             'min' => 0,
             'max' => 10000000
         )
+    ),
+
+    'proj-benq' => array(
+        'POW' => array(
+            'name' => 'Power',
+            'type' => 'boolean'
+        )
     )
-    
 );
     
 ?>

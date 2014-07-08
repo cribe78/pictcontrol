@@ -1,7 +1,11 @@
 <?php
 
-$out_labels = array("", "PICT1", "PICT2", "PICT3", "PICT4", "PICT5", "MR", "7", "8");
-$in_labels = array("", "SAT1", "SAT2", "SAT3", "BD", "5", "6", "7", "8");
+$out_labels[1] = array("", "PICT1", "PICT2", "PICT3", "PICT4", "PICT5", "MR", "7", "8");
+$in_labels[1] = array("", "SAT1", "SAT2", "SAT3", "BD", "5", "6", "7", "8");
+
+$out_labels[2] = array("", "P1", "P2", "P3", "Pod", "GA", "6", "7", "8");
+$in_labels[2] = array("", "Aux", "V1", "V2", "V3", "V4", "VCTL", "7", "8");
+
 ?>
 <div class="matrixcontrol">
     <div>Video</div>
@@ -11,12 +15,12 @@ for ($i = 1; $i <= 8; $i++) {
     $input_id = getID();
 ?>
     <div class="ui-widget-toolbar ui-corner-all">
-    <div class='swtoolbarlabel'><?=$out_labels[$i]?></div>
+    <div class='swtoolbarlabel'><?=$out_labels[$tn][$i]?></div>
     <span id="<?=$input_id?>" class="pcontrol"  
-          data-ut='radio' data-cn='Out<?=$i?>Vid' data-tt='switcher-dxp' data-tn='1'>
+          data-ut='radio' data-cn='Out<?=$i?>Vid' data-tt='switcher-dxp' data-tn='<?=$tn?>'>
 <?
     for ($j = 1; $j <= 8; $j++) {
-        radioHTML($input_id, $j, $in_labels[$j]);
+        radioHTML($input_id, $j, $in_labels[$tn][$j]);
     }
 ?>
     </span>
@@ -36,14 +40,14 @@ for ($i = 1; $i <= 8; $i++) {
 ?>
     <div class="ui-widget-toolbar ui-corner-all">
     <span id="<?=$input_id?>" class="pcontrol"  
-          data-ut='radio' data-cn='Out<?=$i?>Aud' data-tt='switcher-dxp' data-tn='1'>
+          data-ut='radio' data-cn='Out<?=$i?>Aud' data-tt='switcher-dxp' data-tn='<?=$tn?>'>
 <?
     for ($j = 1; $j <= 8; $j++) {
-        radioHTML($input_id, $j, $in_labels[$j]);
+        radioHTML($input_id, $j, $in_labels[$tn][$j]);
     }
 ?>
     </span>
-    <div class='swtoolbarlabel'><?=$out_labels[$i]?></div>
+    <div class='swtoolbarlabel'><?=$out_labels[$tn][$i]?></div>
     </div>
 <? 
 }

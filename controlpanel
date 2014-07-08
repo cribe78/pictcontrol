@@ -36,6 +36,7 @@ require("sub/head.php");
                 <li><a href="#tabsB-3"><span><img src="images/<?=$screen_icons[3]?>" class="tbicon" /></span></a></li>
                 <li><a href="#tabsB-4"><span><img src="images/<?=$screen_icons[4]?>" class="tbicon" /></span></a></li>
                 <li><a href="#tabsB-5"><span><img src="images/<?=$screen_icons[5]?>" class="tbicon" /></span></a></li>
+                <li><a href="#tabsB-6">ORC</a></li>
             </ul>
     <? 
             foreach ($screen_list as $p) {
@@ -45,6 +46,9 @@ require("sub/head.php");
                 echo("</div>");
             }
     ?>
+            <div id="tabsB-6">
+<?                include("sub/orcprojectors.php");   ?>
+            </div>
         </div>
         
     </div>
@@ -89,14 +93,20 @@ require("sub/head.php");
     <div id="tabsA-4">
         <div id="tabsD">
             <ul>
-                <li><a href="#tabsD-1">HDMI</a></li>
-                <li><a href="#tabsD-2">VGA</a></li>    
+                <li><a href="#tabsD-1">PICT</a></li>
+                <li><a href="#tabsD-2">ORC</a></li>
             </ul>
         <div id="tabsD-1">
-<?            include("sub/switcherdxpdiv.php");   ?>
+<?
+            $tn = 1;
+            include("sub/switcherdxpdiv.php");
+?>
         </div>
         <div id="tabsD-2">
-            &nbsp; 
+            <?
+            $tn = 2;
+            include("sub/switcherdxpdiv.php");
+            ?>
         </div>
         </div>
     </div>

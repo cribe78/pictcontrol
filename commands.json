@@ -8,6 +8,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 
     // Ping control daemons
     alertControlDaemon("switcher-dxp", 1, "ALV?");
+    alertControlDaemon("switcher-dxp", 2, "ALV?");
     alertControlDaemon("audio-onkyo", 1, "ALV?");
     alertControlDaemon("proj", 1, "ALV?");
     alertControlDaemon("proj", 2, "ALV?");
@@ -19,6 +20,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     alertControlDaemon("scaler", 3, "ALV?");
     alertControlDaemon("scaler", 4, "ALV?");
     alertControlDaemon("scaler", 5, "ALV?");
+    alertControlDaemon("proj-benq", 1, "ALV?");
+    alertControlDaemon("proj-benq", 2, "ALV?");
+    alertControlDaemon("proj-benq", 3, "ALV?");
 
     $select_commands = $mysqli->prepare(
         "select cq_id, target_type, target_num, command_name, command_type, 
