@@ -510,6 +510,15 @@ $commands = array(
             'type' => "range",
             'min' => 0,
             'max' => 100 
+        ),
+        // Values for this devices are converted to HEX by the control daemon
+        'SLI' => array(
+            'name' => "Input Selector",
+            'type' => "select",
+            'values' => array(
+                '16' => 'Argos (DVD)',   // 10 per docs
+                '48' => '5.1 (Multi Ch.)'  // 30 per docs
+            )
         )
     ),
     "switcher-dxp" => array(
