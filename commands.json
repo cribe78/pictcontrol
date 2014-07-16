@@ -6,6 +6,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     // Poll database for recent commands
     $cmd_idx = $_GET['cmd_idx'];
 
+    $monitor_time = microtime(TRUE);
+    $elapsed = array();
     // Ping control daemons
     alertControlDaemon("switcher-dxp", 1, "ALV?");
     alertControlDaemon("switcher-dxp", 2, "ALV?");
@@ -20,9 +22,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     alertControlDaemon("scaler", 3, "ALV?");
     alertControlDaemon("scaler", 4, "ALV?");
     alertControlDaemon("scaler", 5, "ALV?");
-    alertControlDaemon("proj-benq", 1, "ALV?");
-    alertControlDaemon("proj-benq", 2, "ALV?");
-    alertControlDaemon("proj-benq", 3, "ALV?");
+    //alertControlDaemon("proj-benq", 1, "ALV?");
+    //alertControlDaemon("proj-benq", 2, "ALV?");
+    //alertControlDaemon("proj-benq", 3, "ALV?");
+
+    $elapsed["alert"] = microtime(TRUE) - $monitor_time;
 
     $select_commands = $mysqli->prepare(
         "select cq_id, target_type, target_num, command_name, command_type, 
@@ -41,6 +45,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 
     $select_max_idx = $mysqli->prepare(
         "select cmd_idx_max from cmd_idx_max");
+
+    $elapsed["select_max_prepared"] = microtime(TRUE) - $monitor_time;
 
     $resp['pcontrols'] = array();
     $start_time = time();
@@ -61,8 +67,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
             continue;
         }
 
+        $elapsed["data_present"] = microtime(TRUE) - $monitor_time;
+
         $resp['cmd_idx'] = $cmd_idx_n;
 
+        $select_start = microtime(TRUE);
 
         if (! $select_commands->execute()) {
             pclog("execute select_commands error: {$mysql->error}");
@@ -82,8 +91,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
                 "cmd_idx" => $cmd_idx_r);
 
         }
-        
-        
+
+        $elapsed["data_retrieved"] = microtime(TRUE) - $monitor_time;
+
+        //$resp['elapsed'] = $elapsed;
         $resp['status'] = 1;
         jsonResponse();
     }

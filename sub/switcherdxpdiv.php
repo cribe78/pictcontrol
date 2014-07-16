@@ -4,7 +4,7 @@ $out_labels[1] = array("", "PICT1", "PICT2", "PICT3", "PICT4", "PICT5", "MR", "7
 $in_labels[1] = array("", "SAT1", "SAT2", "SAT3", "BD", "5", "6", "7", "8");
 
 $out_labels[2] = array("", "P1", "P2", "P3", "Pod", "GA", "6", "7", "8");
-$in_labels[2] = array("", "Aux", "V1", "V2", "V3", "V4", "VCTL", "7", "8");
+$in_labels[2] = array("", "V1", "V2", "V3", "V4", "Aux", "VCTL", "7", "8");
 
 ?>
 <div class="matrixcontrol">
