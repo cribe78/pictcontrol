@@ -201,7 +201,7 @@ sub device_connect {
     dwlog("connected to $device_ip:$device_port, proto $proto");
     poll_usleep(2000000);
 
-    if ($proto ne "switcher-dxp") {
+    if ($proto ne "dxp") {
         return $sock;
     }
 
