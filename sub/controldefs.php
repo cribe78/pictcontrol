@@ -521,6 +521,25 @@ $commands = array(
             )
         )
     ),
+    "audio-onkyo-eth" => array(
+        'MVL' => array(
+            'name' => "Master Volume",
+            'type' => "range",
+            'min' => 0,
+            'max' => 80
+        ),
+        // Values for this devices are converted to HEX by the control daemon
+        'SLI' => array(
+            'name' => "Input Selector",
+            'type' => "select",
+            'values' => array(
+                '1' => 'CBL/SAT',   // 01 per docs
+                '2' => 'Game',  // 02 per docs
+                '3' => 'Aux',
+                '43' => 'Network'   // 2B per docs
+            )
+        )
+    ),
     "switcher-dxp" => array(
         'Out1Vid' => array(
             'name' => "PICT1",

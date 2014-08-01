@@ -25,6 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     //alertControlDaemon("proj-benq", 1, "ALV?");
     //alertControlDaemon("proj-benq", 2, "ALV?");
     //alertControlDaemon("proj-benq", 3, "ALV?");
+    alertControlDaemon("audio-onkyo-eth", 1, "ALV?");
 
     $elapsed["alert"] = microtime(TRUE) - $monitor_time;
 

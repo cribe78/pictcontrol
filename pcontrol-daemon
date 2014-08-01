@@ -19,40 +19,6 @@ use strict;
 
 $|++;
 
-# Daemonize
-# Get ready to daemonize by redirecting our output to syslog,
-# requesting that logger prefix the lines with our program name:
-my $ProgramName = "pcontrol-daemon";
-open(STDOUT, "|-", "logger -p local2.info -t $ProgramName")
-    or die("Couldn't open logger output stream: $!\n");
-open(STDERR, ">&STDOUT") or die("Couldn't redirect STDERR to STDOUT: $!\n");
-
-
-chdir('/'); # Avoid the possibility of our working directory resulting in keeping an otherwise unused filesystem in use
-
-# Double-fork to avoid leaving a zombie process behind:
-my $pid;
-defined($pid = fork()) or die "can't fork: $!";
-
-if ($pid) {
-    exit;
-}
-
-defined($pid = fork()) or die "can't fork: $!";
-if ($pid) {
-    exit;
-};
-
-print "$ProgramName $$ successfully daemonized\n";
-openlog("pcontrol-daemon","pid","local2");
-
-# Print a log message before exiting on SIGTERM
-$SIG{TERM} = sub {
-    dwlog("received SIGTERM.  exiting");
-    exit();
-};
-
-
 my $device_ip = "10.5.162.202";
 my $device_port = "23";
 my $device_pass = "DWCONTROL";
@@ -62,6 +28,7 @@ my $debug = 1;
 my $poll_server = 1;
 my $target_poll_freq = 20; # how often to poll the switcher status, in s
 my $listen_port = 0;
+my $daemon = 1;
 
 GetOptions("address=s" => \$device_ip,
             "port=i" => \$device_port,
@@ -69,7 +36,47 @@ GetOptions("address=s" => \$device_ip,
             "tt=s" => \$target_type,
             "tn=i" => \$target_num,
             "debug=i" => \$debug,
-            "listen_port=i" => \$listen_port);
+            "listen_port=i" => \$listen_port,
+            "daemon!" => \$daemon);
+
+
+if ($daemon) {        
+    # Daemonize
+    # Get ready to daemonize by redirecting our output to syslog,
+    # requesting that logger prefix the lines with our program name:
+    my $ProgramName = "pcontrol-daemon";
+    open(STDOUT, "|-", "logger -p local2.info -t $ProgramName")
+        or die("Couldn't open logger output stream: $!\n");
+    open(STDERR, ">&STDOUT") or die("Couldn't redirect STDERR to STDOUT: $!\n");
+
+
+    chdir('/'); # Avoid the possibility of our working directory resulting in keeping an otherwise unused filesystem in use
+
+    # Double-fork to avoid leaving a zombie process behind:
+    my $pid;
+    defined($pid = fork()) or die "can't fork: $!";
+
+    if ($pid) {
+        exit;
+    }
+
+    defined($pid = fork()) or die "can't fork: $!";
+    if ($pid) {
+        exit;
+    };
+
+    print "$ProgramName $$ successfully daemonized\n";
+    openlog("pcontrol-daemon","pid","local2");
+
+}
+
+# Print a log message before exiting on SIGTERM
+$SIG{TERM} = sub {
+    dwlog("received SIGTERM.  exiting");
+    exit();
+};
+
+
 
 my $dbh;
 db_connect();
@@ -81,7 +88,8 @@ my %default_ports = ( proj => 28800,
                       scaler => 28810,
                       "switcher-dxp" => 28820,
                       "audio-onkyo" => 28830,
-                      "proj-benq" => 28840);
+                      "proj-benq" => 28840,
+                      "audio-onkyo-eth" => 28850);
 
 if (! $listen_port) {
     $listen_port = $default_ports{$target_type} + $target_num;
@@ -94,6 +102,9 @@ if ($target_type eq "switcher-dxp") {
 }
 elsif ($target_type eq "audio-onkyo") {
     $proto = "iscp";
+}
+elsif ($target_type eq "audio-onkyo-eth") {
+    $proto = "eiscp";
 }
 elsif ($target_type eq "proj") {
     $proto = "f32";
@@ -190,12 +201,10 @@ sub device_connect {
     dwlog("connected to $device_ip:$device_port, proto $proto");
     poll_usleep(2000000);
 
-    if ($proto eq "iscp" ||
-        $proto eq "f32" ||
-        $proto eq "ia200" ||
-        $proto eq "benq") {
+    if ($proto ne "switcher-dxp") {
         return $sock;
     }
+
 
     # The extron prints a connection message before the password prompt
     my $msg = telnet_read($sock);
@@ -270,7 +279,13 @@ sub dwdebug {
 sub dwlog {
     my ($msg) = (@_);
     chomp $msg;
-    syslog("info", "$target_type:$target_num $msg");
+
+    if ($daemon) {
+        syslog("info", "$target_type:$target_num $msg");
+    }
+    else {
+        print "$msg\n";
+    }
 }
 
 
@@ -284,6 +299,9 @@ sub execute_command {
     }
     elsif ($proto eq "iscp") {
         $res = execute_command_iscp(@_);
+    }
+    elsif ($proto eq "eiscp") {
+        $res = execute_command_eiscp(@_);
     }
     elsif ($proto eq "f32") {
         $res =  execute_command_f32(@_);
@@ -660,12 +678,19 @@ sub execute_command_ia200 {
 }
 
 
+# iscp over ethernet.  same protocol, but with a packet size header added
 
+sub execute_command_eiscp {
+    execute_command_iscp(@_, 1);
+}
 
+# iscp protocol for controlling onkyo amps
 
 sub execute_command_iscp {
-    my ($cmd_ref) = (@_);
+    my ($cmd_ref, $eiscp_arg) = (@_);
     my %command = %$cmd_ref;
+
+    my $eiscp = defined($eiscp_arg) && $eiscp_arg; 
 
     my $cmd_name = $command{command_name};
     my $val = $command{value};
@@ -678,16 +703,47 @@ sub execute_command_iscp {
     }
 
     my $cmd_str = "!1$cmd_name$val";
+    my $cmd_send = "$cmd_str\n";
 
-    $sock->print("$cmd_str\n");
+    if ($eiscp) {
+        my $header = "ISCP" . pack("NNCCCC", 16, length($cmd_send), 1, 0, 0, 0);
+        $cmd_send =  $header . $cmd_send;
+    }
+        
+    $sock->print($cmd_send);
     dwdebug("command sent: $cmd_str");
-    poll_usleep(200000);
+
+    my $usleep_dur = $eiscp ? 500000 : 200000;  # ethernet device is slower than 9600 baud device, WTH
+
+    poll_usleep($usleep_dur);
     my $resp = telnet_read($sock);
+
+    if ($eiscp && length($resp) == 0) {
+        # ethernet device don't play nice
+        $resp = telnet_read($sock);
+    }
+
+    if ($eiscp) {
+        # strip header
+        if (length($resp) < 16) {
+            dwlog("unexpected query reponse (length=" . length($resp) . "): $resp");
+
+            return 0;
+        }
+        else {
+            $resp = substr($resp, 16);
+        }
+    }
+
     dwdebug("response read: $resp");
 
     if ($command{command_type} eq "query") {
         if (length($resp) <= 5) {
-            dwlog("unexpected query reponse: $resp");
+            dwlog("unexpected query reponse (length=" . length($resp) . "): $resp");
+            return 0;
+        }
+        elsif (substr($resp, 2, 3) ne $cmd_name) {
+            dwlog("unexpected query reponse (length=" . length($resp) . "): $resp");
             return 0;
         }
 
@@ -779,26 +835,35 @@ sub get_poll_commands {
 sub handle_unexpected_response {
     my ($resp) = (@_);
 
-    if ($resp =~ /Out(\d+) In(\d+) (Aud|Vid|All)/) {
-        my $out = $1;
-        my $in = $2;
-        my $av = $3;
+    if ($proto eq "dxp") {
+        if ($resp =~ /Out(\d+) In(\d+) (Aud|Vid|All)/) {
+            my $out = $1;
+            my $in = $2;
+            my $av = $3;
 
 
-        if ($av eq 'All') {
-            insert_new_executed("Out$1Aud", $2);
-            insert_new_executed("Out$1Vid", $2);
+            if ($av eq 'All') {
+                insert_new_executed("Out$1Aud", $2);
+                insert_new_executed("Out$1Vid", $2);
+            }
+            else {
+                insert_new_executed("Out$1$av", $2);
+            }
+
+            dwlog("unexpected command processed: $resp");
         }
         else {
-            insert_new_executed("Out$1$av", $2);
+            dwlog("unhandled unexpected response ($proto): $resp");
         }
-
-        dwlog("unexpected command processed: $resp");
+    }
+    elsif ($proto eq "eiscp") {
+        if (length($resp) > 16) {
+            parse_iscp(substr($resp, 16));
+        }
     }
     else {
-        dwlog("unhandled unexpected response: $resp");
+        dwlog("unhandled unexpected response ($proto): $resp");
     }
-
 }
 
 
@@ -818,6 +883,20 @@ sub insert_new_executed {
                                     $value, 'EXECUTED')) {
         dwlog("error inserting command: $DBI::errstr");
     }
+}
+
+
+#
+# parse an iscp response
+#
+
+sub parse_iscp {
+    my ($resp) = (@_);
+
+    my $command_code = substr($resp, 2, 3);
+    my $command_val = substr($resp, 5);
+
+    dwdebug("parse iscp: $command_code : $command_val");
 }
 
 
@@ -898,6 +977,7 @@ sub run {
 
                 if ($status eq "EXECUTED") {
                     cleanup_commands($commands{$id});
+                    $poll_target_last = time();
                 }
 
                 # Break out of this if there are more client
@@ -1019,7 +1099,7 @@ sub telnet_read {
                 return $res;
             }
             elsif ($buf eq "\x1A") {
-                dwdebug("0x1A read");
+                dwdebug("0x1A read after " . length($res) . " bytes");
                 return $res;
             }
             elsif (length($res) == 0 && $buf eq "\x0A" ) {
