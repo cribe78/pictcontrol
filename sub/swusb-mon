@@ -26,9 +26,11 @@ my $controller_user = "admin";
 my $controller_pass = "DWCONTROL";
 my $debug = 1;
 my $daemon = 1;
+my $target_num = 2;
 
 GetOptions("sw4-ip=s" => \$device_ip,
             "sw4-port=i" => \$device_port,
+            "tn=i" => \$target_num,
             "password=s" => \$controller_pass,
             "user=s" => \$controller_user,
             "controller=i" => \$controller_ip,
@@ -62,7 +64,7 @@ if ($daemon) {
     };
 
     print "$ProgramName $$ successfully daemonized\n";
-    openlog("pcontrol-daemon","pid","local2");
+    openlog($ProgramName,"pid","local2");
 
 }
 
@@ -117,8 +119,6 @@ sub dwlog {
 sub run {
     my $sw_sock = device_connect();
 
-    select_dxp_source(4);
-
     MAIN_LOOP: while (1) {
         my $msg = telnet_read($sw_sock);
 
@@ -141,14 +141,14 @@ sub select_dxp_source {
     my $resp = $ua->post("http://controller.dwi.ufl.edu/commands.json", 
                                     {
                                             tt => "switcher-dxp",
-                                            tn => 2,
+                                            tn => $target_num,
                                             ct => "select",
                                             cn => "Out5Vid",
                                             value => $source
                                     });
 
     my $json = $resp->decoded_content();
-
+    dwlog("source $source selected");
     return;
 }
 

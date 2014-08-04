@@ -45,5 +45,5 @@ $target_ports['switcher-dxp']['port'] = array( 1 => 23);
 $target_ports['audio-onkyo']['ip'] = array( 1 => "10.5.162.232");
 $target_ports['audio-onkyo']['port'] = array( 1 => 4001);
 
-$target_ports['audio-onkyo-eth']['ip'] = array( 1 => "10.5.162.15");
+$target_ports['audio-onkyo-eth']['ip'] = array( 1 => "10.5.162.226");
 $target_ports['audio-onkyo-eth']['port'] = array( 1 => 60128);
