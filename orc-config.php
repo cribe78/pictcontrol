@@ -13,10 +13,11 @@ $v1 = array( "name" => "V1", "input" => "1");
 $v2 = array( "name" => "V2", "input" => "2");
 $v3 = array( "name" => "V3", "input" => "3");
 $v4 = array( "name" => "V4", "input" => "4");
-$aux = array( "name" => "AUX", "input" => "5");
-$vctrl = array( "name" => "VCTRL", "input" => "6");
+$lt = array( "name" => "LT", "input" => "6");
+$aux = array( "name" => "AUX", "input" => "7");
 
-$switcher_sources = array($v1, $v2, $v3, $v4, $aux, $vctrl);
+
+$switcher_sources = array($v1, $v2, $v3, $v4, $lt, $aux);
 
 $target = array("tt" => "switcher-dxp", "tn" => 2);
 
@@ -58,22 +59,22 @@ $orc_config = array(
             "col" => 4,
             "row" => 4
         ),
-        array(
-            "name" => "Podium R",
-            "output" => 4,
-            "type" => "Vid",
-            "sources" => $switcher_sources,
-            "col" => 3,
-            "row" => 3
-        ),
-        array(
-            "name" => "GA Desk",
-            "output" => 6,
-            "type" => "Vid",
-            "sources" => $switcher_sources,
-            "col" => 4,
-            "row" => 2
-        ),
+//        array(
+//            "name" => "Podium R",
+//            "output" => 4,
+//            "type" => "Vid",
+//            "sources" => $switcher_sources,
+//            "col" => 3,
+//            "row" => 3
+//        ),
+//        array(
+//            "name" => "GA Desk",
+//            "output" => 6,
+//            "type" => "Vid",
+//            "sources" => $switcher_sources,
+//            "col" => 4,
+//            "row" => 2
+//        ),
         array(
             "name" => "Program Video",
             "output" => 7,

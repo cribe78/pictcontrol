@@ -27,6 +27,7 @@ my $controller_pass = "DWCONTROL";
 my $debug = 1;
 my $daemon = 1;
 my $target_num = 2;
+my $dxp_dest = 6;
 
 GetOptions("sw4-ip=s" => \$device_ip,
             "sw4-port=i" => \$device_port,
@@ -35,7 +36,8 @@ GetOptions("sw4-ip=s" => \$device_ip,
             "user=s" => \$controller_user,
             "controller=i" => \$controller_ip,
             "debug" => \$debug,
-            "daemon!" => \$daemon);
+            "daemon!" => \$daemon,
+            "dxp-dest=s" => \$dxp_dest);
 
 
 if ($daemon) {        
@@ -72,6 +74,12 @@ if ($daemon) {
 $SIG{TERM} = sub {
     dwlog("received SIGTERM.  exiting");
     exit();
+};
+
+my $conn_closed = 0;
+$SIG{PIPE} = sub {
+    dwlog("recieved SIGPIPE, doing something?");
+    $conn_closed = 1;
 };
 
 run();
@@ -118,14 +126,37 @@ sub dwlog {
 
 sub run {
     my $sw_sock = device_connect();
-
+    my $last_kicked = 0;
     MAIN_LOOP: while (1) {
+        if (time() - $last_kicked > 10) {
+            $sw_sock->print("I");
+            $last_kicked = time();
+        }
+
         my $msg = telnet_read($sw_sock);
 
-        if ($msg =~ /Chn(\d)/) {
-            select_dxp_source($1);    
+        if ($conn_closed) {
+            dwlog("device connection closed, reopening");
+            $sw_sock->close();
+            $sw_sock = device_connect();
+            $conn_closed = 0;
+        }
+
+        if ($msg) {
+            dwdebug("msg read: $msg");
+
+            if ($msg =~ /Chn(\d)/) {
+                select_dxp_source($1);
+            }
+            else {
+                # Ask for clarification
+                dwdebug("You're breaking up SWUSB4, come again?");
+                $sw_sock->print("I");
+            }
         }
     }
+
+    print "how on earth did we get here?\n";
 }
 
 
@@ -143,7 +174,7 @@ sub select_dxp_source {
                                             tt => "switcher-dxp",
                                             tn => $target_num,
                                             ct => "select",
-                                            cn => "Out5Vid",
+                                            cn => "Out". $dxp_dest . "Vid",
                                             value => $source
                                     });
 

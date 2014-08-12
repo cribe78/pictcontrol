@@ -15,6 +15,7 @@ require("sub/head.php");
     <ul id="tablistA">
         <li><a href="#tabsA-1">Proj/Amp</a></li>
         <li><a href="#tabsA-2">Switcher</a></li>
+        <li><a href="#tabsA-3">Gentner</a></li>
     </ul>
 
     <div id="tabsA-1">
@@ -38,6 +39,11 @@ require("sub/head.php");
         <?
         $tn = 2;
         include("sub/switcherdxpdiv.php");
+        ?>
+    </div>
+    <div id="tabsA-3">
+        <?
+        include("sub/gentner.php");
         ?>
     </div>
 </div>

@@ -639,5 +639,24 @@ $commands = array(
         )
     )
 );
-    
-?>
+
+
+$commands['xap800'] = array();
+
+// Generate xap800 crosspoint matrix
+for ($i = 1; $i <= 12; $i++) {
+    for ($j = 1; $j <= 12; $j++) {
+        $commands['xap800']["MTRXLVL $i I $j O"] = array(
+            'name' => "I{$i}O{$j}",
+            'type' => 'range',
+            'min' => -60,
+            'max' => 0
+        );
+
+        $commands['xap800']["MTRX $i I $j O"] = array(
+            'name' => "I{$i}O{$j}",
+            'type' => 'boolean'
+        );
+    }
+}
+

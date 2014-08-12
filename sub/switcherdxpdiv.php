@@ -3,8 +3,8 @@
 $out_labels[1] = array("", "PICT1", "PICT2", "PICT3", "PICT4", "PICT5", "MR", "7", "8");
 $in_labels[1] = array("", "SAT1", "SAT2", "SAT3", "BD", "5", "6", "7", "8");
 
-$out_labels[2] = array("", "Left", "Back", "Right", "Podium R", "Podium L", "GA Desk", "Program", "Amp");
-$in_labels[2] = array("", "V1", "V2", "V3", "V4", "Aux", "VCTL", "7", "8");
+$out_labels[2] = array("", "Left", "Back", "Right", "Podium L", "Podium R", "GA Desk", "Program", "Podium F");
+$in_labels[2] = array("", "V1", "V2", "V3", "V4", "5", "Laptop", "Aux", "8");
 
 ?>
 <div class="matrixcontrol">

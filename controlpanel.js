@@ -533,6 +533,10 @@ function loadLogMessages(logs) {
 function loadSeq(seqID) { 
     var listhtml = "";
 
+    if (typeof seqID == "undefined") {
+        return;
+    }
+
     console.log("load sequence " + seqID); 
     for (var idx in sequences[seqID].commands) {
         var cmd = sequences[seqID].commands[idx];
@@ -578,9 +582,11 @@ function loadSequences(json) {
     
     opthtml += selectOption("new", "New...");
 
-    $("#seqs").html(opthtml);
-
-    loadSeq($("#seqs").val());
+    var seqs = $("#seqs");
+    if (seqs.length > 0) {
+        seqs.html(opthtml);
+        loadSeq(seqs.val());
+    }
 }
 
 function pctlVal(jqo) {
