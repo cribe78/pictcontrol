@@ -9,7 +9,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     $monitor_time = microtime(TRUE);
     $elapsed = array();
     // Ping control daemons
-    alertControlDaemon("switcher-dxp", 1, "ALV?");
+    //alertControlDaemon("switcher-dxp", 1, "ALV?");
     alertControlDaemon("switcher-dxp", 2, "ALV?");
     alertControlDaemon("audio-onkyo", 1, "ALV?");
     alertControlDaemon("proj", 1, "ALV?");
@@ -75,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         $select_start = microtime(TRUE);
 
         if (! $select_commands->execute()) {
-            pclog("execute select_commands error: {$mysql->error}");
+            pclog("execute select_commands error: {$mysqli->error}");
             jsonResponse();
         }
 
@@ -111,6 +111,7 @@ elseif ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $value = $_POST['value'];
     
     queueCommand($tt, $tn, $ct, $cn, $value);
+    queueSlaveCommands($tt, $tn, $ct, $cn, $value);
     alertControlDaemon($tt, $tn);
         
 

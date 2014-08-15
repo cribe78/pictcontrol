@@ -36,7 +36,7 @@ $target_ports['scaler']['ip'] = array(    1 => "192.168.1.200",
     3 => "192.168.1.202",
     4 => "192.168.1.203",
     5 => "192.168.1.204");
-$target_ports['scaler']['port'] = 30001;
+$target_ports['scaler']['port'] = array( 1 => 30001);
 
 $target_ports['switcher-dxp']['ip'] = array( 1 => "10.5.162.202",
     2 => "10.5.162.220");

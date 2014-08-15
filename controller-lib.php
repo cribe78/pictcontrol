@@ -249,6 +249,44 @@ function queueCommand($tt, $tn, $ct, $cn, $value) {
     pclog("command queued: $tt, $tn, $ct, $cn, $value, $cmd_idx");
 }
 
+function queueSlaveCommands($tt, $tn, $ct, $cn, $value) {
+    global $mysqli;
+
+    $fetch_slaves = $mysqli->prepare(
+        "select s.target_type, s.target_num, s.command_type, s.command_name, s.value
+            from slave_commands s
+            inner join master_commands m
+            on m.master_command_id = s.master_command_id
+            where m.target_type = ?
+            and m.target_num = ?
+            and m.command_name = ?");
+
+    if (! $fetch_slaves) {
+        pclog("prepare fetch_slaves error: {$mysqli->error}");
+        jsonResponse();
+    }
+
+    $fetch_slaves->bind_param('sis', $tt, $tn, $cn);
+
+    if (! $fetch_slaves->execute()) {
+        pclog("execute fetch_slaves error: {$mysqli->error}");
+        jsonResponse();
+    }
+
+    $fetch_slaves->bind_result($stt, $stn, $sct, $scn, $svalue);
+    $fetch_slaves->store_result();
+
+    while ($fetch_slaves->fetch()) {
+        $ett = $stt == NULL ? $tt : $stt;
+        $etn = $stn == NULL ? $tn : $stn;
+        $ect = $sct == NULL ? $ct : $sct;
+        $ecn = $scn == NULL ? $cn : $scn;
+        $evalue = $svalue == NULL ? $value : $svalue;
+
+        queueCommand($ett, $etn, $ect, $ecn, $evalue);
+    }
+}
+
 function radioBar($tt, $tn, $cn, $values = NULL) {
     global $commands;
     $id = getID();

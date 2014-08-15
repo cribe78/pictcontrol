@@ -7,14 +7,14 @@
  */
 
 
-gentnerCrosspoint(11, 3, "PGM -&gt; House L");
-gentnerCrosspoint(12, 4, "PGM -&gt; House R");
-gentnerCrosspoint(9, 3, "V4 -&gt; House L");
-gentnerCrosspoint(10, 4, "V4 -&gt; House R");
-gentnerCrosspoint(11, 1, "PGM -&gt; Online L");
-gentnerCrosspoint(12, 2," PGM -&gt; Online R");
-gentnerCrosspoint(1, 1, "Mic -&gt; Online L");
-gentnerCrosspoint(1, 2, "Mic -&gt; Online R");
+gentnerCrosspoint(1, 1, "Mic (1/2) -&gt; Online (1/2)"); // 1, 25
+gentnerCrosspoint(1, 5, "Mic (1/2) -&gt; Full Mix (5/6)"); // 5, 19
+gentnerCrosspoint(9, 3, "V4 (9/10) -&gt; House (3/4)"); // 4, 20
+gentnerCrosspoint(9, 5, "V4 (9/10) -&gt; Full Mix (5/6)"); // 6, 21
+gentnerCrosspoint(11, 1, "PGM (11/12) -&gt; Online (1/2)");  // 3, 22
+gentnerCrosspoint(11, 3, "PGM (11/12) -&gt; House (3/4)"); //2, 23,
+gentnerCrosspoint(11, 5, "PGM (11/12) -&gt; Full Mix (5/6)"); // 7, 24
+
 
 
 function gentnerCrosspoint($input, $output, $label) {
