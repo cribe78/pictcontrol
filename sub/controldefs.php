@@ -1,13 +1,13 @@
 <?
 $switcherInputs = array(
-        1 => "SAT1",
-        2 => "SAT2",
-        3 => "SAT3",
-        4 => "BD",
-        5 => "IN5",
-        6 => "IN6",
-        7 => "IN7",
-        8 => "IN8" );
+        1 => "In1",
+        2 => "In2",
+        3 => "In3",
+        4 => "In4",
+        5 => "In5",
+        6 => "In6",
+        7 => "In7",
+        8 => "In8" );
 
 $commands = array( 
         'scaler' => array(
@@ -542,82 +542,82 @@ $commands = array(
     ),
     "switcher-dxp" => array(
         'Out1Vid' => array(
-            'name' => "PICT1",
+            'name' => "Out1Vid",
             'type' => "select",
             'values' => $switcherInputs
         ),
         'Out2Vid' => array(
-            'name' => "PICT2",
+            'name' => "Out2Vid",
             'type' => "select",
             'values' => $switcherInputs
         ),
         'Out3Vid' => array(
-            'name' => "PICT3",
+            'name' => "Out3Vid",
             'type' => "select",
             'values' => $switcherInputs
         ),
         'Out4Vid' => array(
-            'name' => "PICT4",
+            'name' => "Out4Vid",
             'type' => "select",
             'values' => $switcherInputs
         ),
         'Out5Vid' => array(
-            'name' => "PICT5",
+            'name' => "Out5Vid",
             'type' => "select",
             'values' => $switcherInputs
         ),
         'Out6Vid' => array(
-            'name' => "MR",
+            'name' => "Out6Vid",
             'type' => "select",
             'values' => $switcherInputs
         ),
         'Out7Vid' => array(
-            'name' => "OUT7",
+            'name' => "Out7Vid",
             'type' => "select",
             'values' => $switcherInputs
         ),
         'Out8Vid' => array(
-            'name' => "OUT8",
+            'name' => "Out8Vid",
             'type' => "select",
             'values' => $switcherInputs
         ),  
         'Out1Aud' => array(
-            'name' => "PICT1",
+            'name' => "Out1Audio",
             'type' => "select",
             'values' => $switcherInputs
         ),
         'Out2Aud' => array(
-            'name' => "PICT2",
+            'name' => "Out2Audio",
             'type' => "select",
             'values' => $switcherInputs
         ),
         'Out3Aud' => array(
-            'name' => "PICT3",
+            'name' => "Out3Audio",
             'type' => "select",
             'values' => $switcherInputs
         ),
         'Out4Aud' => array(
-            'name' => "PICT4",
+            'name' => "Out4Audio",
             'type' => "select",
             'values' => $switcherInputs
         ),
         'Out5Aud' => array(
-            'name' => "PICT5",
+            'name' => "Out5Audio",
             'type' => "select",
             'values' => $switcherInputs
         ),
         'Out6Aud' => array(
-            'name' => "MR",
+            'name' => "Out6Audio",
             'type' => "select",
             'values' => $switcherInputs
         ),
         'Out7Aud' => array(
-            'name' => "OUT7",
+            'name' => "Out7Audio",
             'type' => "select",
             'values' => $switcherInputs
         ),
         'Out8Aud' => array(
-            'name' => "OUT8",
+            'name' => "Out8Audio",
             'type' => "select",
             'values' => $switcherInputs
         )

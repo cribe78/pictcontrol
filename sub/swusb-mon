@@ -19,7 +19,7 @@ use strict;
 
 $|++;
 
-my $device_ip = "orc-control.dwi.ufl.edu";
+my $device_ip = "10.5.162.232";
 my $device_port = 28844;
 my $controller_ip = "controller.dwi.ufl.edu";
 my $controller_user = "admin";
@@ -29,7 +29,7 @@ my $daemon = 1;
 my $target_num = 2;
 my $dxp_dest = 6;
 
-GetOptions("sw4-ip=s" => \$device_ip,
+my %options = ("sw4-ip=s" => \$device_ip,
             "sw4-port=i" => \$device_port,
             "tn=i" => \$target_num,
             "password=s" => \$controller_pass,
@@ -39,6 +39,13 @@ GetOptions("sw4-ip=s" => \$device_ip,
             "daemon!" => \$daemon,
             "dxp-dest=s" => \$dxp_dest);
 
+my %input_map;
+for (my $i = 1; $i <= 4; $i++ ) {
+   $input_map{"$i"} = $i;
+   $options{"input$i=i"} = \$input_map{"$i"};
+}
+
+GetOptions(%options);
 
 if ($daemon) {        
     # Daemonize
@@ -146,7 +153,7 @@ sub run {
             dwdebug("msg read: $msg");
 
             if ($msg =~ /Chn(\d)/) {
-                select_dxp_source($1);
+                select_dxp_source($input_map{$1});
             }
             else {
                 # Ask for clarification

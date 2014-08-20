@@ -40,7 +40,7 @@ $orc_config = array(
                 "cn" => "POW"
             ),
             "sources" => $switcher_sources,
-            "col" => 0,
+            "col" => 3,
             "row" => 4
         ),
         array(
@@ -48,7 +48,7 @@ $orc_config = array(
             "output" => 2,
             "type" => "Vid",
             "sources" => $switcher_sources,
-            "col" => 2,
+            "col" => 1,
             "row" => 0
         ),
         array(
@@ -61,7 +61,7 @@ $orc_config = array(
                 "cn" => "POW"
             ),
             "sources" => $switcher_sources,
-            "col" => 4,
+            "col" => 0,
             "row" => 4
         ),
 //        array(
@@ -85,8 +85,8 @@ $orc_config = array(
             "output" => 7,
             "type" => "Vid",
             "sources" => array($v2, $v3, $v4, $aux),
-            "col" => 5,
-            "row" => 4
+            "col" => 3,
+            "row" => 1
         ),
         array(
             "name" => "Program Audio 1",
@@ -112,7 +112,14 @@ $orc_config = array(
     ),
 
     "switcher-cols" => array(20, 320, 480, 640, 1000, 1340, 1800),
-    "switcher-rows" => array(0, 200, 250, 400, 500)
+    "switcher-rows" => array(0, 200, 250, 400, 500),
+
+    "presets" => array(
+        array(
+            "name" => "Launch ORC",
+            "seq-id" => 11
+        )
+    )
 );
 
 
@@ -120,7 +127,8 @@ for ($i = 1; $i <= 12; $i++) {
     $on_val = "1";
     if ($i <= 8) $on_val = "4";  // "gated"
     for($o = 1; $o <= 12; $o++) {
-        if (is_array($gentner_ports["xpoints"][$i]) &&
+        if (isset($gentner_ports["xpoints"][$i]) &&
+                is_array($gentner_ports["xpoints"][$i]) &&
                 isset($gentner_ports["xpoints"][$i][$o]) &&
                 $gentner_ports["xpoints"][$i][$o] == true) {
             $orc_config["audio-xpoints"][] = array(

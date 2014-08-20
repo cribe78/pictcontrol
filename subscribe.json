@@ -9,17 +9,13 @@
  */
 
 
-
 require("sub/head.php");
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $tt = $_POST['tt'];
     $tn = $_POST['tn'];
 
-    $ip_parts = explode(".", $_SERVER['REMOTE_ADDR']);
-    $ip_norm = sprintf("%03d.%03d.%03d.%03d", $ip_parts[0], $ip_parts[1], $ip_parts[2], $ip_parts[3]);
-
-    alertControlDaemon($tt, $tn, $ip_norm);
+    alertControlDaemon($tt, $tn, "SUBS". $_SERVER['REMOTE_ADDR']);
 }
 
 

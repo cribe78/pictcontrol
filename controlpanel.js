@@ -577,7 +577,7 @@ function loadSequences(json) {
     var opthtml = "";
 
     for (var seq_id in sequences) {
-        opthtml += selectOption(seq_id, sequences[seq_id].name);
+        opthtml += selectOption(seq_id, sequences[seq_id].name + "(" + seq_id + ")");
     }
     
     opthtml += selectOption("new", "New...");

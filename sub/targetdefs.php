@@ -50,3 +50,35 @@ $target_ports['audio-onkyo-eth']['port'] = array( 1 => 60128);
 
 $target_ports['xap800']['ip'] = array( 1 => "10.5.162.232");
 $target_ports['xap800']['port'] = array( 1 => 4003);
+
+$active_targets = array(
+    "switcher-dxp" => array(
+//        1,
+        2 => true
+    ),
+    "audio-onkyo" => array( 1 ),
+    "proj" => array(
+        1 => true,
+        2 => true,
+        3 => true,
+        4 => true,
+        5 => true
+    ),
+    "scaler" => array(
+        1 => true,
+        2 => true,
+        3 => true,
+        4 => true,
+        5 => true
+    ),
+    "proj-benq" => array(
+ //       1,
+ //       2
+    ),
+    "audio-onkyo-eth" => array(
+        1 => true
+    ),
+    "xap800" => array(
+  //      1
+    )
+);

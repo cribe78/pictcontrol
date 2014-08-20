@@ -21,67 +21,78 @@ function alertControlDaemon($tt, $tn, $token = "POLL") {
     global $mysqli;
 
     $loopcount = 0;
-    $max_loops = 5;
+    $max_loops = 1;
 
-    while ($loopcount <= $max_loops) {
-        $loopcount++;
-        //pclog("alertControlDaemon loop $loopcount");
+    static $daemons = false;
 
+    if (! $daemons) {
+        $daemons = array();
         $select_daemon = $mysqli->prepare(
-            "select port, pid from command_daemons
-                where target_type = ?
-                and target_num = ?");
-        
+            "select target_type, target_num, port, pid from command_daemons");
+
         if (! $select_daemon) {
             pclog("prepare select daemon error: {$myslqi->error}");
             return;
         }
 
-        $select_daemon->bind_param('si', $tt, $tn);
-
         if (! $select_daemon->execute()) {
-            pclog("$tt:$tn error selecting control daemon: {$select_daemon->error}");
+            pclog("error selecting control daemon: {$select_daemon->error}");
             return;
         }
 
-        $select_daemon->bind_result($port, $pid);
+        $select_daemon->bind_result($dtt, $dtn, $port, $pid);
         $select_daemon->store_result();
-        if ($select_daemon->fetch()) {
-            if ( $port == 0 ) {
-                pclog("$tt:$tn daemon still starting... waiting");
-                usleep(500000);
-                continue;
+        while ($select_daemon->fetch()) {
+            if (! isset($daemons[$dtt])) {
+                $daemons[$dtt] = array();
             }
 
-            $fp = stream_socket_client("udp://127.0.0.1:$port", $errno, $errstr);
-            if (! $fp) {
-                pclog("$tt:$tn could not connect to control daemon at port $port)");
-                launchControlDaemon($tt, $tn);
-                return;
-            }    
-            stream_set_timeout($fp, 2); 
-
-            fwrite($fp, $token);
-            //pclog("$token sent to control daemon");
-            $pollresp = fread($fp, 3);
-            
-            if ($pollresp == "ACK") {
-                fclose($fp);
-                //pclog("ACK received from control daemon");
-                return;
-            }
-            pclog("$tt:$tn NO ACK received (pid $pid)");
-
-            if ($loopcount == 5) {
-                pclog("killing process $pid");
-                exec("kill $pid");
-            }
-        }
-        else {
-            pclog("$tt:$tn alertControlDaemon: no daemon registered");
+            $daemons[$dtt][$dtn] = array("port" => $port, "pid" => $pid);
         }
     }
-    
+
+
+    if (isset($daemons[$tt][$tn])) {
+        $port = $daemons[$tt][$tn]["port"];
+        $pid = $daemons[$tt][$tn]["pid"];
+        if ( $port == 0 ) {
+            $ps = exec("ps $pid");
+            if (preg_match("/pcontrol-daemon --tt=$tt --tn=$tn/", $ps)) {
+                pclog("$tt:$tn daemon still starting... maybe next time");
+                return;
+            }
+            else {
+                pclog("process $pid not found, relaunching");
+                launchControlDaemon($tt, $tn);
+                return;
+            }
+        }
+
+        $fp = stream_socket_client("udp://127.0.0.1:$port", $errno, $errstr);
+        if (! $fp) {
+            pclog("$tt:$tn could not connect to control daemon at port $port)");
+            launchControlDaemon($tt, $tn);
+            return;
+        }
+        stream_set_timeout($fp, 2);
+
+        fwrite($fp, $token);
+        //pclog("$token sent to control daemon");
+        $pollresp = fread($fp, 3);
+
+        if ($pollresp == "ACK") {
+            fclose($fp);
+            //pclog("ACK received from control daemon");
+            return;
+        }
+        pclog("$tt:$tn NO ACK received (pid $pid)");
+
+        if ($loopcount == $max_loops) {
+            pclog("killing process $pid");
+            exec("kill $pid");
+        }
+    }
+
     launchControlDaemon($tt, $tn);
 }
 
@@ -126,7 +137,11 @@ function jsonResponse($response = "") {
 function launchControlDaemon($tt, $tn) {
     global $mysqli;
     global $target_ports;
+    global $active_targets;
 
+    if (! isset($active_targets[$tt][$tn])) {
+        return;
+    }
 
     $delete_daemon = $mysqli->prepare(
         "delete from command_daemons where 
@@ -214,6 +229,15 @@ function pclog($msg) {
         error_log("execute insert_log error: {$mysqli->error}");
 }
     
+
+function pingControlDaemons() {
+    global $active_targets;
+    foreach ($active_targets as $tt => $tna) {
+        foreach ($tna as $tn => $tv) {
+            alertControlDaemon($tt, $tn, "ALV?");
+        }
+    }
+}
 
 function setPControl($tt, $tn, $ct, $cn, $value) {
     if ($tt == 'proj' || 

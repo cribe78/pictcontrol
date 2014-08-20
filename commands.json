@@ -8,24 +8,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 
     $monitor_time = microtime(TRUE);
     $elapsed = array();
-    // Ping control daemons
-    //alertControlDaemon("switcher-dxp", 1, "ALV?");
-    alertControlDaemon("switcher-dxp", 2, "ALV?");
-    alertControlDaemon("audio-onkyo", 1, "ALV?");
-    alertControlDaemon("proj", 1, "ALV?");
-    alertControlDaemon("proj", 2, "ALV?");
-    alertControlDaemon("proj", 3, "ALV?");
-    alertControlDaemon("proj", 4, "ALV?");
-    alertControlDaemon("proj", 5, "ALV?");
-    alertControlDaemon("scaler", 1, "ALV?");
-    alertControlDaemon("scaler", 2, "ALV?");
-    alertControlDaemon("scaler", 3, "ALV?");
-    alertControlDaemon("scaler", 4, "ALV?");
-    alertControlDaemon("scaler", 5, "ALV?");
-    //alertControlDaemon("proj-benq", 1, "ALV?");
-    //alertControlDaemon("proj-benq", 2, "ALV?");
-    //alertControlDaemon("proj-benq", 3, "ALV?");
-    //alertControlDaemon("audio-onkyo-eth", 1, "ALV?");
+    pingControlDaemons();
 
     $elapsed["alert"] = microtime(TRUE) - $monitor_time;
 
