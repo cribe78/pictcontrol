@@ -79,6 +79,6 @@ $active_targets = array(
         1 => true
     ),
     "xap800" => array(
-  //      1
+        1 => true
     )
 );

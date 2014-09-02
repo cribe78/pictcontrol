@@ -645,18 +645,58 @@ $commands['xap800'] = array();
 
 // Generate xap800 crosspoint matrix
 for ($i = 1; $i <= 12; $i++) {
+    $group = $i > 8 ? "L" : "M";
+
     for ($j = 1; $j <= 12; $j++) {
-        $commands['xap800']["MTRXLVL $i I $j O"] = array(
+        $commands['xap800']["MTRXLVL $i $group $j O"] = array(
             'name' => "I{$i}O{$j}",
             'type' => 'range',
             'min' => -60,
             'max' => 0
         );
 
-        $commands['xap800']["MTRX $i I $j O"] = array(
+        $commands['xap800']["MTRX $i $group $j O"] = array(
             'name' => "I{$i}O{$j}",
             'type' => 'boolean'
         );
     }
+
+    // GAIN command
+    $commands['xap800']["GAIN $i $group"] = array(
+        'name' => "GAIN $i $group",
+        'type' => "range",
+        'min' => -65,
+        'max' => 20
+    );
 }
 
+
+// Each of these is of the form CMD INPUT 0|1 for mics only
+$xap800_mic_switches = array(
+    "AEC",
+    "CHAIR0"
+);
+
+// Each of these is of the form CMD INPUT M 0|1 for mics only
+$xap800_mic_switches2 = array(
+    "AAMB"
+);
+
+// These are of the form CMD INPUT GROUOP for all inputs
+$xap800_input_switches = array(
+    "AGC"
+);
+
+
+
+/**
+ * other xap switches
+ * AGCSET C G V V V V
+ * AMBLVL C V
+ * CGROUP C V
+ * COMPRESS C V V V V V
+ * COMPSEL
+ * DECAY C V
+ * DELAY C V
+ * FMP
+     */

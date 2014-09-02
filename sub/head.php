@@ -15,6 +15,11 @@ if (! isset($ctx)) {
     }
 }
 
+if (! isset($page_title)) {
+  $page_title = "PICT Control";
+}
+
+
 require("controller-lib.php");
 
 if ($ctx == "html") {
@@ -22,7 +27,7 @@ if ($ctx == "html") {
 <!DOCTYPE html> 
 <html> 
 <head> 
-    <title>PICT Control</title> 
+    <title><?=$page_title?></title>
     <meta name="viewport" content="width=device-width, initial-scale=1"> 
     <link rel="stylesheet" href="css/excite-bike/jquery-ui-1.10.3.custom.css" />    
     <script src="http://code.jquery.com/jquery-1.9.1.js"></script>

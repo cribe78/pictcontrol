@@ -2,9 +2,9 @@
 
 $js_includes = array("controldefs.js", "controlpanel.js");
 $css_includes = array("css/controlpanel.css");
+$page_title = "ORC Control";
 require("sub/head.php");
-
-
+include("sub/gentner-ports.php");
 ?>
 
 <body>
@@ -16,6 +16,7 @@ require("sub/head.php");
         <li><a href="#tabsA-1">Proj/Amp</a></li>
         <li><a href="#tabsA-2">Switcher</a></li>
         <li><a href="#tabsA-3">Gentner</a></li>
+        <li><a href="#tabsA-4">Gentner In</a></li>
     </ul>
 
     <div id="tabsA-1">
@@ -45,6 +46,11 @@ require("sub/head.php");
         <?
         include("sub/gentner.php");
         ?>
+    </div>
+    <div id="tabsA-4">
+      <?
+      include("sub/gentner-in.php");
+      ?>
     </div>
 </div>
 </body>

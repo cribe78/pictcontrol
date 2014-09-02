@@ -125,7 +125,11 @@ $orc_config = array(
 
 for ($i = 1; $i <= 12; $i++) {
     $on_val = "1";
-    if ($i <= 8) $on_val = "4";  // "gated"
+    $lvl_dev_val = "L";
+    if ($i <= 8) {
+        $on_val = "4"; // gated
+        $lvl_dev_val = "M"; // "mic"
+    }
     for($o = 1; $o <= 12; $o++) {
         if (isset($gentner_ports["xpoints"][$i]) &&
                 is_array($gentner_ports["xpoints"][$i]) &&
@@ -136,8 +140,10 @@ for ($i = 1; $i <= 12; $i++) {
                 "input" => $i,
                 "output" => $o,
                 "output-name" => $gentner_ports["out"][$o],
-                "cn-lvl" => "MTRXLVL $i I $o O",
-                "cn-mute" => "MTRX $i I $o O",
+                "cn-lvl" => "MTRXLVL $i $lvl_dev_val $o O",
+                "cn-mute" => "MTRX $i $lvl_dev_val $o O",
+                "cn-meter-in" => "LVL $i $lvl_dev_val A",
+                "cn-meter-out" => "LVL $o O A",
                 "range-min" => -60,
                 "range-max" => 0,
                 "on-val" => $on_val

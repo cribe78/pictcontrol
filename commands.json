@@ -4,7 +4,10 @@ require("sub/head.php");
 
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     // Poll database for recent commands
-    $cmd_idx = $_GET['cmd_idx'];
+    $cmd_idx = 0;
+    if (isset($_GET['cmd_idx'])) {
+        $cmd_idx = $_GET['cmd_idx'];
+    }
 
     $monitor_time = microtime(TRUE);
     $elapsed = array();

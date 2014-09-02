@@ -9,9 +9,9 @@
 $mic_xpoints = array( 1 => true, 5 => true);
 
 $gentner_ports = array(
-    "in" => array(1 => "Mic 1",
-                  7 => "Mic 2",
-                  8 => "Mic 3",
+    "in" => array(1 => "Class",
+                  7 => "Lav 1",
+                  8 => "Lav 2",
                   9 => "V4",
                   11 => "PGM"),
     "out" => array( 1 => "Online",

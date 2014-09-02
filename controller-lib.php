@@ -87,9 +87,13 @@ function alertControlDaemon($tt, $tn, $token = "POLL") {
         }
         pclog("$tt:$tn NO ACK received (pid $pid)");
 
-        if ($loopcount == $max_loops) {
-            pclog("killing process $pid");
+        $running_proc = exec("ps $pid");
+        if (preg_match("/pcontrol-daemon/", $running_proc)) {
+            pclog("$tt:$tn killing process $pid");
             exec("kill $pid");
+        }
+        else {
+            pclog("$tt:$tn existing process $pid AWOL");
         }
     }
 

@@ -1,0 +1,3 @@
+Adding a control/device:
+- targetdefs.php contains connection information for devices
+- All controls/commands must be defined in controldefs.php
